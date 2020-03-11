@@ -2,13 +2,13 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
 #
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Mm]emoryCaptures/
+Flocking Simulation Prototype/[Ll]ibrary/
+Flocking Simulation Prototype/[Tt]emp/
+Flocking Simulation Prototype/[Oo]bj/
+Flocking Simulation Prototype/[Bb]uild/
+Flocking Simulation Prototype/[Bb]uilds/
+Flocking Simulation Prototype/[Ll]ogs/
+Flocking Simulation Prototype/[Mm]emoryCaptures/
 
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta
