@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
+using UnityEngine.UI;
 
 public class Flock : MonoBehaviour
 {
@@ -12,6 +12,11 @@ public class Flock : MonoBehaviour
     [SerializeField] private float m_Size = 10.0f;
     [SerializeField] private int m_SpawnCount = 10;
     [SerializeField] private GameObject m_BoidPrefab;
+    [SerializeField] private GameObject m_EdgePrefab;
+
+    [SerializeField] private Slider m_SeparationSlider;
+    [SerializeField] private Slider m_AlignmentSlider;
+    [SerializeField] private Slider m_CohesionSlider;
 
     public static Flock GetInstance()
     {
@@ -29,9 +34,19 @@ public class Flock : MonoBehaviour
 
     private void Start()
     {
-        m_Boids = new List<Boid>();
+        InitBoids();
+        InitBoundingBoxEdges();
+    }
 
-        for(int i = 0; i < m_SpawnCount; i++)
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawWireCube(transform.position, new Vector3(m_Size, m_Size, m_Size));
+    }
+
+    private void InitBoids()
+    {
+        m_Boids = new List<Boid>();
+        for (int i = 0; i < m_SpawnCount; i++)
         {
             Boid boid = Instantiate(m_BoidPrefab).GetComponent<Boid>();
             boid.transform.SetParent(transform);
@@ -44,9 +59,31 @@ public class Flock : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
+    private void InitBoundingBoxEdges()
     {
-        Gizmos.DrawWireCube(transform.position, new Vector3(m_Size, m_Size, m_Size));
+        Vector3[,] cubePositions =
+        {
+            { new Vector3(-0.5f, -0.5f, -0.5f), new Vector3( 0.5f, -0.5f, -0.5f) },
+            { new Vector3(-0.5f,  0.5f, -0.5f), new Vector3( 0.5f,  0.5f, -0.5f) },
+            { new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-0.5f,  0.5f, -0.5f) },
+            { new Vector3( 0.5f, -0.5f, -0.5f), new Vector3( 0.5f,  0.5f, -0.5f) },
+            { new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-0.5f, -0.5f,  0.5f) },
+            { new Vector3(-0.5f,  0.5f, -0.5f), new Vector3(-0.5f,  0.5f,  0.5f) },
+            { new Vector3( 0.5f, -0.5f, -0.5f), new Vector3( 0.5f, -0.5f,  0.5f) },
+            { new Vector3( 0.5f,  0.5f, -0.5f), new Vector3( 0.5f,  0.5f,  0.5f) },
+            { new Vector3(-0.5f, -0.5f,  0.5f), new Vector3( 0.5f, -0.5f,  0.5f) },
+            { new Vector3(-0.5f,  0.5f,  0.5f), new Vector3( 0.5f,  0.5f,  0.5f) },
+            { new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(-0.5f,  0.5f,  0.5f) },
+            { new Vector3( 0.5f, -0.5f,  0.5f), new Vector3( 0.5f,  0.5f,  0.5f) }
+        };
+
+        for (int i = 0; i < cubePositions.GetLength(0); i++)
+        {
+            LineRenderer edge = Instantiate(m_EdgePrefab).GetComponent<LineRenderer>();
+            Vector3[] edgePositions = { cubePositions[i, 0] * m_Size, cubePositions[i, 1] * m_Size };
+            edge.transform.parent = transform;
+            edge.SetPositions(edgePositions);
+        }
     }
 
     public List<Boid> GetBoids()
@@ -57,5 +94,20 @@ public class Flock : MonoBehaviour
     public float GetSize()
     {
         return m_Size;
+    }
+
+    public float GetSeparationWeight()
+    {
+        return m_SeparationSlider.value;
+    }
+
+    public float GetAlignmentWeight()
+    {
+        return m_AlignmentSlider.value;
+    }
+
+    public float GetCohesionWeight()
+    {
+        return m_CohesionSlider.value;
     }
 }

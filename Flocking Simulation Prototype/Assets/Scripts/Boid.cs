@@ -14,13 +14,10 @@ public class Boid : MonoBehaviour
     [SerializeField] private float m_MaxSpeed = 0.2f;
     [SerializeField] private float m_MaxForce = 0.1f;
 
-    [Header("Physics")]
+    [Header("Flock")]
     [SerializeField] private float m_SeparateDistance = 0.5f;
-    [SerializeField] private float m_SeparateWeight = 1.0f;
     [SerializeField] private float m_AlignDistance = 2.0f;
-    [SerializeField] private float m_AlignWeight = 1.0f;
     [SerializeField] private float m_CohereDistance = 2.0f;
-    [SerializeField] private float m_CohereWeight = 1.0f;
 
     [Header("Reference")]
     [SerializeField] private Transform m_MeshTransform;
@@ -127,6 +124,7 @@ public class Boid : MonoBehaviour
     void Separate()
     {
         List<Boid> boids = Flock.GetInstance().GetBoids();
+        float weight = Flock.GetInstance().GetSeparationWeight();
 
         foreach(Boid boid in boids) {
 
@@ -136,7 +134,7 @@ public class Boid : MonoBehaviour
 
             if(distance < m_SeparateDistance) {
                 Vector3 desired = Vector3.Normalize(transform.position - boid.transform.position);
-                desired *= Mathf.Clamp(m_SeparateDistance / distance, 0f, m_MaxSpeed);
+                desired *= Mathf.Clamp(m_SeparateDistance / distance, 0f, m_MaxSpeed * weight);
                 Steer(desired);
             }
 
@@ -146,6 +144,7 @@ public class Boid : MonoBehaviour
     void Align()
     {
         List<Boid> boids = Flock.GetInstance().GetBoids();
+        float weight = Flock.GetInstance().GetAlignmentWeight();
 
         Vector3 averageForward = Vector3.zero;
 
@@ -161,7 +160,7 @@ public class Boid : MonoBehaviour
         }
 
         averageForward.Normalize();
-        averageForward *= m_MaxSpeed;
+        averageForward *= m_MaxSpeed * weight;
 
         Steer(averageForward);
     }
@@ -169,6 +168,7 @@ public class Boid : MonoBehaviour
     void Cohere()
     {
         List<Boid> boids = Flock.GetInstance().GetBoids();
+        float weight = Flock.GetInstance().GetSeparationWeight();
 
         Vector3 averagePosition = Vector3.zero;
 
@@ -187,7 +187,7 @@ public class Boid : MonoBehaviour
             averagePosition /= boids.Count - 1;
         }
 
-        Seek(averagePosition, m_MaxSpeed, m_ArrivalDistance);
+        Seek(averagePosition, m_MaxSpeed * weight, m_ArrivalDistance);
     }
 
     #endregion

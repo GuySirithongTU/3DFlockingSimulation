@@ -9,6 +9,8 @@ Flocking Simulation Prototype/[Bb]uild/
 Flocking Simulation Prototype/[Bb]uilds/
 Flocking Simulation Prototype/[Ll]ogs/
 Flocking Simulation Prototype/[Mm]emoryCaptures/
+Flocking Simulation Prototype/[Aa]ssets/Wispy Sky/
+Builds/
 
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta
