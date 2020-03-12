@@ -48,7 +48,7 @@ MonoBehaviour:
   m_ArrivalDistance: 0.5
   m_MaxSpeed: 0.15
   m_MaxForce: 1
-  m_SeparateDistance: 0.5
+  m_SeparateDistance: 0.2
   m_AlignDistance: 2
   m_CohereDistance: 2
   m_MeshTransform: {fileID: 8183451824936056476}

@@ -40,6 +40,6 @@ public class CameraController : MonoBehaviour
         translate += Vector3.forward * Input.GetAxis("Vertical");
         translate += Vector3.right * Input.GetAxis("Horizontal");
         translate += Vector3.up * Input.GetAxis("Jump");
-        transform.Translate(translate * m_MoveSpeed);
+        transform.Translate(translate * m_MoveSpeed * Time.deltaTime);
     }
 }

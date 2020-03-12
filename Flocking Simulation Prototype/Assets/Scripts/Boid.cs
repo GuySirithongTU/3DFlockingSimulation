@@ -168,7 +168,7 @@ public class Boid : MonoBehaviour
     void Cohere()
     {
         List<Boid> boids = Flock.GetInstance().GetBoids();
-        float weight = Flock.GetInstance().GetSeparationWeight();
+        float weight = Flock.GetInstance().GetCohesionWeight();
 
         Vector3 averagePosition = Vector3.zero;
 
