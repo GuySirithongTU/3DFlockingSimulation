@@ -3,8 +3,8 @@ RM=del
 
 SRC_DIR=src
 OBJ_DIR=obj
-INC_DIR=-Idependencies/glfw-3.3.2/include
-LIB_DIR=-Ldependencies/glfw-3.3.2
+INC_DIR=-Idependencies/glfw-3.3.2/include -Idependencies/glad/include
+LIB_DIR=-Ldependencies/glfw-3.3.2 -Ldependencies/glad
 
 CFLAGS=-c -std=c++11
 CDEF=-D _CRT_SECURE_NO_WARNINGS -D _GLFW_WIN32
@@ -27,7 +27,7 @@ makerun: all
 	$(EXE)
 
 $(EXE): $(OBJ) $(MODS)
-	$(CC) -o $@ $< $(LDFLAGS) $(LDLIBS)
+	$(CC) -o $@ $(OBJ) $(LDFLAGS) $(LDLIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CC) -o $@ $< $(CDEF) $(CPPFLAGS) $(CFLAGS)
