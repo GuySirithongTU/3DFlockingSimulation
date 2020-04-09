@@ -7,10 +7,10 @@ INC_DIR=-Idependencies/glfw-3.3.2/include -Idependencies/glad/include
 LIB_DIR=-Ldependencies/glfw-3.3.2 -Ldependencies/glad
 
 CFLAGS=-c -std=c++11
-CDEF=-D _CRT_SECURE_NO_WARNINGS -D _GLFW_WIN32
+CDEF=-D _CRT_SECURE_NO_WARNINGS -D _GLFW_WIN32 -D GLFW_INCLUDE_NONE
 CPPFLAGS=$(INC_DIR) -l.
 LDFLAGS=$(LIB_DIR)
-LDLIBS=-lglfw3 -lopengl32 -lgdi32
+LDLIBS=-lglfw3 -lopengl32 -lgdi32 -lglad
 MODS=dependencies/glfw-3.3.2 dependencies/glad
 
 SRC=$(wildcard $(SRC_DIR)/*.cpp)
@@ -34,6 +34,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 
 $(MODS):
 	$(MAKE) --directory=$@
+
+Main.o: Application.h
+Application.o: Application.h Utility.h Input.h
+Input.o: Input.h
+Structure.o: Structure.h Utility.h
 
 define NEWLINE
 

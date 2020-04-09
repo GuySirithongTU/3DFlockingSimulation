@@ -63,3 +63,4 @@ crashlytics-build.properties
 *.o
 *.lib
 *.exe
+.vscode/
