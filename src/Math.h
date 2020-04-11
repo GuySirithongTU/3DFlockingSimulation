@@ -35,7 +35,7 @@ struct Tuple
     union { float x, r; };
     union { float y, g; };
     union { float z, b; };
-    float w;
+    union { float w, a; };
 };
 
 Tuple operator*(float lhs, const Tuple& rhs);
@@ -75,7 +75,7 @@ struct Vector : public Tuple
 struct Color : public Tuple
 {
     Color(void);
-    Color(float r, float g, float b);
+    Color(float r, float g, float b, float a = 1.0f);
 
     Color operator*(const Color& rhs) const;
 };
@@ -110,6 +110,8 @@ class Matrix
 public:
     Matrix(void);
     Matrix(const float *data);
+
+    const float *GetData(void) const;
     
     static Matrix<size> Identity(void);
     static Matrix<size> Transpose(const Matrix<size>& m);
@@ -198,6 +200,12 @@ Matrix<size>::Matrix(const float *data)
 {
     assert(size >= 2 && size <= 4);
     std::copy(data, data + size * size, m_Data);
+}
+
+template<int size>
+const float *Matrix<size>::GetData(void) const
+{
+    return m_Data;
 }
 
 template<int size>

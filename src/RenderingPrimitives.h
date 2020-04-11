@@ -1,4 +1,6 @@
-#pragma region
+#pragma once
+
+#include "Math.h"
 
 #include <vector>
 
@@ -10,8 +12,10 @@ public:
     Primitive(void);
     virtual ~Primitive();
 
-    virtual void Bind(void) = 0;
-    virtual void Unbind(void) = 0;
+    virtual void Bind(void) const = 0;
+    virtual void Unbind(void) const = 0;
+
+    int GetCount(void) const;
 
 protected:
     void GenerateBuffer(void);
@@ -20,6 +24,7 @@ protected:
 protected:
     unsigned int m_Id = -1;
     bool m_Initialized = false;
+    int m_Count = 0;
 };
 
 #pragma endregion
@@ -32,14 +37,10 @@ public:
     VertexBuffer(void);
     virtual ~VertexBuffer();
 
-    virtual void Bind(void) override;
-    virtual void Unbind(void) override;
+    virtual void Bind(void) const override;
+    virtual void Unbind(void) const override;
 
-    void PushLayout(int size);
-    void BufferData(float *data, int count);
-
-private:
-    std::vector<int> m_Layout;
+    void BufferData(float *data, int count, const std::vector<int>& layout);
 };
 
 class IndexBuffer : public Primitive
@@ -48,8 +49,8 @@ public:
     IndexBuffer(void);
     virtual ~IndexBuffer();
 
-    virtual void Bind(void) override;
-    virtual void Unbind(void) override;
+    virtual void Bind(void) const override;
+    virtual void Unbind(void) const override;
 
     void BufferData(unsigned int *data, int count);
 };
@@ -64,10 +65,33 @@ public:
     VertexArray(void);
     ~VertexArray();
 
-    virtual void Bind(void) override;
-    virtual void Unbind(void) override;
+    virtual void Bind(void) const override;
+    virtual void Unbind(void) const override;
 
     void Init(void);
+};
+
+#pragma endregion
+
+#pragma region mesh
+
+class Mesh
+{
+public:
+    Mesh(void);
+    ~Mesh();
+
+    void Bind(void) const;
+    void Unbind(void) const;
+
+    void InitData(float *vertices, int vertexCount, unsigned int *indices, int indexCount, const std::vector<int>& layout);
+
+    int GetIndexCount(void) const;
+
+private:
+    VertexBuffer m_VertexBuffer;
+    IndexBuffer m_IndexBuffer;
+    VertexArray m_VertexArray;
 };
 
 #pragma endregion
@@ -80,10 +104,18 @@ public:
     Shader(void);
     ~Shader();
 
-    virtual void Bind(void) override;
-    virtual void Unbind(void) override;
+    virtual void Bind(void) const override;
+    virtual void Unbind(void) const override;
 
     void InitShader(const char *vertexPath, const char *fragmentPath);
+
+    int GetUniformLocation(const char *name) const;
+    void SetUniformInt(const char *name, int value);
+    void SetUniformFloat(const char *name, float value);
+    void SetUniformVec3(const char *name, const Vector& value);
+    void SetUniformVec4(const char *name, const Vector& value);
+    void SetUniformMat3(const char *name, const Matrix3& value);
+    void SetUniformMat4(const char *name, const Matrix4& value);
 
 private:
     unsigned int CompileShader(const char *path, unsigned int type);

@@ -23,6 +23,11 @@ void Primitive::DeleteBuffer(void)
     glDeleteBuffers(1, &m_Id);
 }
 
+int Primitive::GetCount(void) const
+{
+    return m_Count;
+}
+
 #pragma endregion
 
 #pragma region buffers
@@ -34,22 +39,17 @@ VertexBuffer::~VertexBuffer()
         DeleteBuffer();
 }
 
-void VertexBuffer::Bind(void)
+void VertexBuffer::Bind(void) const
 {
     glBindBuffer(GL_ARRAY_BUFFER, m_Id);
 }
 
-void VertexBuffer::Unbind(void)
+void VertexBuffer::Unbind(void) const
 {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VertexBuffer::PushLayout(int size)
-{
-    m_Layout.push_back(size);
-}
-
-void VertexBuffer::BufferData(float *data, int count)
+void VertexBuffer::BufferData(float *data, int count, const std::vector<int>& layout)
 {
     // buffer data
     GenerateBuffer();
@@ -57,14 +57,15 @@ void VertexBuffer::BufferData(float *data, int count)
     glBufferData(GL_ARRAY_BUFFER, count * sizeof(float), (void *)data, GL_STATIC_DRAW);
 
     // set layout
-    int stride = std::accumulate(m_Layout.begin(), m_Layout.end(), 0);
+    int stride = std::accumulate(layout.begin(), layout.end(), 0);
     int offset = 0;
-    for(int i = 0; i < m_Layout.size(); i++) {
-        glVertexAttribPointer(i, m_Layout[i], GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(offset * sizeof(float)));
+    for(int i = 0; i < layout.size(); i++) {
+        glVertexAttribPointer(i, layout[i], GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(offset * sizeof(float)));
         glEnableVertexAttribArray(i);
-        offset += m_Layout[i];
+        offset += layout[i];
     }
 
+    m_Count = count;
     m_Initialized = true;
 }
 
@@ -75,12 +76,12 @@ IndexBuffer::~IndexBuffer()
         DeleteBuffer();
 }
 
-void IndexBuffer::Bind(void)
+void IndexBuffer::Bind(void) const
 {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_Id);
 }
 
-void IndexBuffer::Unbind(void)
+void IndexBuffer::Unbind(void) const
 {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
@@ -92,6 +93,7 @@ void IndexBuffer::BufferData(unsigned int *data, int count)
     Bind();
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned int), (void *)data, GL_STATIC_DRAW);
 
+    m_Count = count;
     m_Initialized = true;
 }
 
@@ -112,14 +114,47 @@ void VertexArray::Init(void)
     m_Initialized = true;
 }
 
-void VertexArray::Bind(void)
+void VertexArray::Bind(void) const
 {
     glBindVertexArray(m_Id);
 }
 
-void VertexArray::Unbind(void)
+void VertexArray::Unbind(void) const
 {
     glBindVertexArray(0);
+}
+
+#pragma endregion
+
+#pragma region mesh
+
+Mesh::Mesh(void) {}
+Mesh::~Mesh() {}
+
+void Mesh::Bind(void) const
+{
+    m_VertexArray.Bind();
+}
+
+void Mesh::Unbind(void) const
+{
+    m_VertexArray.Unbind();
+}
+
+void Mesh::InitData(float *vertices, int vertexCount, unsigned int *indices, int indexCount, const std::vector<int>& layout)
+{
+    m_VertexArray.Init();
+    m_VertexArray.Bind();
+    
+    m_VertexBuffer.BufferData(vertices, vertexCount, layout);
+    m_IndexBuffer.BufferData(indices, indexCount);
+
+    m_VertexArray.Unbind();
+}
+
+int Mesh::GetIndexCount(void) const
+{
+    return m_IndexBuffer.GetCount();
 }
 
 #pragma endregion
@@ -133,12 +168,12 @@ Shader::~Shader()
         glDeleteProgram(m_Id);
 }
 
-void Shader::Bind(void)
+void Shader::Bind(void) const
 {
     glUseProgram(m_Id);
 }
 
-void Shader::Unbind(void)
+void Shader::Unbind(void) const
 {
     glUseProgram(0);
 }
@@ -202,6 +237,66 @@ unsigned int Shader::CompileShader(const char *path, unsigned int type)
     }
 
     return shader;
+}
+
+int Shader::GetUniformLocation(const char *name) const
+{
+    return glGetUniformLocation(m_Id, name);
+}
+
+void Shader::SetUniformInt(const char *name, int value)
+{
+    int location = GetUniformLocation(name);
+    if(location >= 0)
+        glUniform1i(location, value);
+    else
+        std::cout << "SHADER::ERROR: uniform not found: " << name << std::endl;
+}
+
+void Shader::SetUniformFloat(const char *name, float value)
+{
+    int location = GetUniformLocation(name);
+    if(location >= 0)
+        glUniform1f(location, value);
+    else
+        std::cout << "SHADER::ERROR: uniform not found: " << name << std::endl;
+}
+
+void Shader::SetUniformVec3(const char *name, const Vector& value)
+{
+    int location = GetUniformLocation(name);
+    if(location >= 0)
+        glUniform3fv(location, 1, &value.x);
+    else
+        std::cout << "SHADER::ERROR: uniform not found: " << name << std::endl;
+}
+
+void Shader::SetUniformVec4(const char *name, const Vector& value)
+{
+    int location = GetUniformLocation(name);
+    if(location >= 0)
+        glUniform4fv(location, 1, &value.x);
+    else
+        std::cout << "SHADER::ERROR: uniform not found: " << name << std::endl;
+}
+
+void Shader::SetUniformMat3(const char *name, const Matrix3& value)
+{
+    int location = GetUniformLocation(name);
+    if(location >= 0)
+        glUniformMatrix3fv(location, 1, true, value.GetData());
+    else
+        std::cout << "SHADER::ERROR: uniform not found: " << name << std::endl;
+}
+
+void Shader::SetUniformMat4(const char *name, const Matrix4& value)
+{
+    int location = GetUniformLocation(name);
+    if(location >= 0) {
+        glUniformMatrix4fv(location, 1, true, value.GetData());
+    }
+    else
+        std::cout << "SHADER::ERROR: uniform not found: " << name << std::endl;
 }
 
 #pragma endregion

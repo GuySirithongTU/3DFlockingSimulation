@@ -51,11 +51,19 @@ Window::Window(int width, int height, const char *title)
     }
     
     glViewport(0, 0, m_Width, m_Height);
+    glfwSetWindowSizeCallback(m_Window, ResizeCallback);
 
     // print info
     std::cout << "WINDOW: successfully initialized window and OpenGL context" << std::endl;
     std::cout << "  GPU: (" << glGetString(GL_VENDOR) << ") " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "  OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+}
+
+void Window::ResizeCallback(GLFWwindow *window, int width, int height)
+{
+    Application::GetInstance()->GetWindow()->m_Width = width;
+    Application::GetInstance()->GetWindow()->m_Height = height;
+    glViewport(0, 0, width, height);
 }
 
 Window::~Window()
@@ -76,6 +84,7 @@ bool Window::WindowShouldClose(void)
 
 int Window::GetWidth(void) const { return m_Width; }
 int Window::GetHeight(void) const { return m_Height; }
+float Window::GetAspect(void) const { return (float)m_Width / (float)m_Height; }
 GLFWwindow *Window::GetGLFWWindow(void) { return m_Window; }
 
 #pragma endregion
@@ -113,42 +122,42 @@ void Application::Run(void)
     float vertices[] = {
         -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 0.0f,
          0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 0.0f,
-         0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f
+         0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 0.0f
     };
 
     unsigned int indices[] = {
-        0, 1, 2
+        0, 1, 2,
+        0, 2, 3
     };
 
-    VertexArray vao;
-    vao.Init();
-    vao.Bind();
+    std::vector<int> layout = { 3, 3 };
 
-    VertexBuffer vbo;
-    vbo.PushLayout(3);
-    vbo.PushLayout(3);
-    vbo.BufferData(vertices, 6 * 3);
-
-    IndexBuffer ebo;
-    ebo.BufferData(indices, 3);
-
-    vao.Unbind();
+    Mesh mesh;
+    mesh.InitData(vertices, 6 * 4, indices, 6, layout);
 
     Shader shader;
     shader.InitShader("assets/shaders/Phong_V.glsl", "assets/shaders/Phong_F.glsl");
+
+    Camera camera;
+    
+    m_Renderer.SetShader(&shader);
+    m_Renderer.SetCamera(&camera);
 
     while(!m_Window->WindowShouldClose()) {
         
         m_Input.PollEvents();
         
-        glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        
-        shader.Bind();
-        vao.Bind();
-        ebo.Bind();
-        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-        vao.Unbind();
+        camera.SetView(Matrix4::LookAt(
+            { 0.0f, 0.0f, 3.0f },
+            { 0.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f }));
+        camera.SetProjection(Matrix4::Perspective(60.0f, m_Window->GetAspect(), 0.1f, 10.0f));
+
+        m_Renderer.BeginScene();
+        m_Renderer.Clear({ 1.0f, 0.0f, 1.0f, 1.0f });
+        m_Renderer.DrawMesh(mesh, Matrix4::Identity());
+
         m_Window->SwapBuffers();
     }
 }

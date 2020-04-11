@@ -1,4 +1,4 @@
-#include "Structure.h"
+#include "Math.h"
 
 #include <cmath>
 #include <cassert>
@@ -139,12 +139,12 @@ Vector& Vector::Normalize(void)
 Color::Color(void)
     : Tuple() {}
 
-Color::Color(float r, float g, float b)
-    : Tuple(r, g, b, 0.0f) {}
+Color::Color(float r, float g, float b, float a)
+    : Tuple(r, g, b, a) {}
 
 Color Color::operator*(const Color& rhs) const
 {
-    return Color(x * rhs.x, y * rhs.y, z * rhs.z);
+    return Color(x * rhs.x, y * rhs.y, z * rhs.z, a * rhs.a);
 }
 
 #pragma endregion

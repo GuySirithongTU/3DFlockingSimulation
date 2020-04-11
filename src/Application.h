@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include "Renderer.h"
 #include "Input.h"
 
 class Window
@@ -16,7 +17,11 @@ public:
 
     int GetWidth(void) const;
     int GetHeight(void) const;
+    float GetAspect(void) const;
     GLFWwindow *GetGLFWWindow(void);
+
+private:
+    static void ResizeCallback(GLFWwindow *window, int width, int height);
 
 private:
     GLFWwindow *m_Window;
@@ -40,5 +45,6 @@ public:
 
 private:
     Window *m_Window;
+    Renderer m_Renderer;
     Input m_Input;
 };
