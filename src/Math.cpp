@@ -203,6 +203,7 @@ Matrix4 Matrix4::Scale(float x, float y, float z)
 
 Matrix4 Matrix4::RotateX(float a)
 {
+    a = DEG_TO_RAD(a);
     Matrix4 result = Matrix::Identity();
     float sinA = sinf(a);
     float cosA = cosf(a);
@@ -215,6 +216,7 @@ Matrix4 Matrix4::RotateX(float a)
 
 Matrix4 Matrix4::RotateY(float a)
 {
+    a = DEG_TO_RAD(a);
     Matrix4 result = Matrix::Identity();
     float sinA = sinf(a);
     float cosA = cosf(a);
@@ -227,6 +229,7 @@ Matrix4 Matrix4::RotateY(float a)
 
 Matrix4 Matrix4::RotateZ(float a)
 {
+    a = DEG_TO_RAD(a);
     Matrix4 result = Matrix::Identity();
     float sinA = sinf(a);
     float cosA = cosf(a);

@@ -49,12 +49,12 @@ void VertexBuffer::Unbind(void) const
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VertexBuffer::BufferData(float *data, int count, const std::vector<int>& layout)
+void VertexBuffer::BufferData(float *data, int size, const std::vector<int>& layout)
 {
     // buffer data
     GenerateBuffer();
     Bind();
-    glBufferData(GL_ARRAY_BUFFER, count * sizeof(float), (void *)data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size, (void *)data, GL_STATIC_DRAW);
 
     // set layout
     int stride = std::accumulate(layout.begin(), layout.end(), 0);
@@ -65,35 +65,7 @@ void VertexBuffer::BufferData(float *data, int count, const std::vector<int>& la
         offset += layout[i];
     }
 
-    m_Count = count;
-    m_Initialized = true;
-}
-
-IndexBuffer::IndexBuffer(void) {}
-IndexBuffer::~IndexBuffer()
-{
-    if(m_Initialized)
-        DeleteBuffer();
-}
-
-void IndexBuffer::Bind(void) const
-{
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_Id);
-}
-
-void IndexBuffer::Unbind(void) const
-{
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
-void IndexBuffer::BufferData(unsigned int *data, int count)
-{
-    // buffer data
-    GenerateBuffer();
-    Bind();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned int), (void *)data, GL_STATIC_DRAW);
-
-    m_Count = count;
+    m_Count = size / sizeof(float) / stride;
     m_Initialized = true;
 }
 
@@ -141,20 +113,17 @@ void Mesh::Unbind(void) const
     m_VertexArray.Unbind();
 }
 
-void Mesh::InitData(float *vertices, int vertexCount, unsigned int *indices, int indexCount, const std::vector<int>& layout)
+void Mesh::InitData(float *vertices, int vertexCount, const std::vector<int>& layout)
 {
     m_VertexArray.Init();
     m_VertexArray.Bind();
-    
     m_VertexBuffer.BufferData(vertices, vertexCount, layout);
-    m_IndexBuffer.BufferData(indices, indexCount);
-
     m_VertexArray.Unbind();
 }
 
-int Mesh::GetIndexCount(void) const
+int Mesh::GetVertexCount(void) const
 {
-    return m_IndexBuffer.GetCount();
+    return m_VertexBuffer.GetCount();
 }
 
 #pragma endregion

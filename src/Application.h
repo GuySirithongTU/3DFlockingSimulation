@@ -37,13 +37,17 @@ private:
 
 public:
     Application(void);
-    ~Application();
+    virtual ~Application();
 
     void Run(void);
 
     Window *GetWindow(void);
 
-private:
+protected:
+    virtual void OnInit(void);
+    virtual void OnUpdate(void);
+
+protected:
     Window *m_Window;
     Renderer m_Renderer;
     Input m_Input;

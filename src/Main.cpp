@@ -1,8 +1,8 @@
-#include "Application.h"
+#include "Simulation.h"
 
 int main(void)
 {
-    Application app;
+    Simulation app;
     app.Run();
 
     return 0;

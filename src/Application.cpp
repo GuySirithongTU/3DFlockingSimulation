@@ -119,45 +119,10 @@ Application::~Application()
 
 void Application::Run(void)
 {
-    float vertices[] = {
-        -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 0.0f
-    };
-
-    unsigned int indices[] = {
-        0, 1, 2,
-        0, 2, 3
-    };
-
-    std::vector<int> layout = { 3, 3 };
-
-    Mesh mesh;
-    mesh.InitData(vertices, 6 * 4, indices, 6, layout);
-
-    Shader shader;
-    shader.InitShader("assets/shaders/Phong_V.glsl", "assets/shaders/Phong_F.glsl");
-
-    Camera camera;
-    
-    m_Renderer.SetShader(&shader);
-    m_Renderer.SetCamera(&camera);
-
+    OnInit();
     while(!m_Window->WindowShouldClose()) {
-        
         m_Input.PollEvents();
-        
-        camera.SetView(Matrix4::LookAt(
-            { 0.0f, 0.0f, 3.0f },
-            { 0.0f, 0.0f, 0.0f },
-            { 0.0f, 1.0f, 0.0f }));
-        camera.SetProjection(Matrix4::Perspective(60.0f, m_Window->GetAspect(), 0.1f, 10.0f));
-
-        m_Renderer.BeginScene();
-        m_Renderer.Clear({ 1.0f, 0.0f, 1.0f, 1.0f });
-        m_Renderer.DrawMesh(mesh, Matrix4::Identity());
-
+        OnUpdate();
         m_Window->SwapBuffers();
     }
 }
@@ -166,5 +131,8 @@ Window *Application::GetWindow(void)
 {
     return m_Window;
 }
+
+void Application::OnInit(void) {}
+void Application::OnUpdate(void) {}
 
 #pragma endregion

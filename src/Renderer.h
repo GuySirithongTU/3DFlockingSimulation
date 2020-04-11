@@ -14,7 +14,7 @@ public:
     void SetView(const Matrix4& view);
     void SetProjection(const Matrix4& projection);
 
-private:
+protected:
     Matrix4 m_View;
     Matrix4 m_Projection;
 };

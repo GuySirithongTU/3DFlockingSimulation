@@ -40,19 +40,7 @@ public:
     virtual void Bind(void) const override;
     virtual void Unbind(void) const override;
 
-    void BufferData(float *data, int count, const std::vector<int>& layout);
-};
-
-class IndexBuffer : public Primitive
-{
-public:
-    IndexBuffer(void);
-    virtual ~IndexBuffer();
-
-    virtual void Bind(void) const override;
-    virtual void Unbind(void) const override;
-
-    void BufferData(unsigned int *data, int count);
+    void BufferData(float *data, int size, const std::vector<int>& layout);
 };
 
 #pragma endregion
@@ -84,13 +72,12 @@ public:
     void Bind(void) const;
     void Unbind(void) const;
 
-    void InitData(float *vertices, int vertexCount, unsigned int *indices, int indexCount, const std::vector<int>& layout);
+    void InitData(float *vertices, int vertexCount, const std::vector<int>& layout);
 
-    int GetIndexCount(void) const;
+    int GetVertexCount(void) const;
 
 private:
     VertexBuffer m_VertexBuffer;
-    IndexBuffer m_IndexBuffer;
     VertexArray m_VertexArray;
 };
 

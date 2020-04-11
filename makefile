@@ -35,12 +35,13 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 $(MODS):
 	$(MAKE) --directory=$@
 
-Main.o: Application.h
+Main.o: Simulation.h
 Application.o: Application.h Utility.h Input.h Renderer.h RenderingPrimitives.h
 Input.o: Input.h
 Math.o: Math.h Utility.h
 Renderer.o: Renderer.h Math.h RenderingPrimitives.h
 RenderingPrimitives.o: RenderingPrimitives.h Math.h
+Simulation.o: Application.h Input.h Math.h Utility.h
 
 define NEWLINE
 
