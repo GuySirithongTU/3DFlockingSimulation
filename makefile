@@ -36,9 +36,10 @@ $(MODS):
 	$(MAKE) --directory=$@
 
 Main.o: Application.h
-Application.o: Application.h Utility.h Input.h
+Application.o: Application.h Utility.h Input.h RenderingPrimitives.h
 Input.o: Input.h
 Structure.o: Structure.h Utility.h
+RenderingPrimitives.o: RenderingPrimitives.h
 
 define NEWLINE
 

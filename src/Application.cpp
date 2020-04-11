@@ -1,6 +1,7 @@
 #include "Application.h"
 
 #include "Utility.h"
+#include "RenderingPrimitives.h"
 
 #include <glad/glad.h>
 #include <iostream>
@@ -109,13 +110,45 @@ Application::~Application()
 
 void Application::Run(void)
 {
+    float vertices[] = {
+        -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 0.0f,
+         0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 0.0f,
+         0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f
+    };
+
+    unsigned int indices[] = {
+        0, 1, 2
+    };
+
+    VertexArray vao;
+    vao.Init();
+    vao.Bind();
+
+    VertexBuffer vbo;
+    vbo.PushLayout(3);
+    vbo.PushLayout(3);
+    vbo.BufferData(vertices, 6 * 3);
+
+    IndexBuffer ebo;
+    ebo.BufferData(indices, 3);
+
+    vao.Unbind();
+
+    Shader shader;
+    shader.InitShader("assets/shaders/Phong_V.glsl", "assets/shaders/Phong_F.glsl");
+
     while(!m_Window->WindowShouldClose()) {
         
         m_Input.PollEvents();
         
         glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-
+        
+        shader.Bind();
+        vao.Bind();
+        ebo.Bind();
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+        vao.Unbind();
         m_Window->SwapBuffers();
     }
 }
