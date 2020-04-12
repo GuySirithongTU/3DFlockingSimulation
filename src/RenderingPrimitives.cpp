@@ -49,15 +49,15 @@ void VertexBuffer::Unbind(void) const
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VertexBuffer::BufferData(float *data, int size, const std::vector<int>& layout)
+void VertexBuffer::BufferData(float *data, int vertexCount, const std::vector<int>& layout)
 {
     // buffer data
+    int stride = std::accumulate(layout.begin(), layout.end(), 0);
     GenerateBuffer();
     Bind();
-    glBufferData(GL_ARRAY_BUFFER, size, (void *)data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, stride * vertexCount * sizeof(float), (void *)data, GL_STATIC_DRAW);
 
     // set layout
-    int stride = std::accumulate(layout.begin(), layout.end(), 0);
     int offset = 0;
     for(int i = 0; i < layout.size(); i++) {
         glVertexAttribPointer(i, layout[i], GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(offset * sizeof(float)));
@@ -65,7 +65,7 @@ void VertexBuffer::BufferData(float *data, int size, const std::vector<int>& lay
         offset += layout[i];
     }
 
-    m_Count = size / sizeof(float) / stride;
+    m_Count = vertexCount;
     m_Initialized = true;
 }
 
@@ -111,6 +111,32 @@ void Mesh::Bind(void) const
 void Mesh::Unbind(void) const
 {
     m_VertexArray.Unbind();
+}
+
+void Mesh::InitData(const char *path, const std::vector<int>& layout)
+{
+    // open file
+    std::ifstream file(path);
+    if(!file.is_open()) {
+        std::cout << "MESH::ERROR: failed to open file: " << path << std::endl;
+        return;
+    }
+
+    int attributeCount, vertexCount, length;
+    std::vector<float> vertices;
+    float attribute;
+
+    // read vertices
+    attributeCount = std::accumulate(layout.begin(), layout.end(), 0);
+    while(!file.eof()) {
+        file >> attribute;
+        vertices.push_back(attribute);
+        length++;
+    }
+    file.close();
+    vertexCount = length / attributeCount;
+
+    InitData(vertices.data(), vertexCount, layout);
 }
 
 void Mesh::InitData(float *vertices, int vertexCount, const std::vector<int>& layout)

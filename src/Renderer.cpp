@@ -37,6 +37,7 @@ void Renderer::DrawMesh(const Mesh& mesh, const Matrix4& model)
     m_Shader->Bind();
     mesh.Bind();
     m_Shader->SetUniformMat4("u_Model", model);
+    m_Shader->SetUniformMat4("u_NormalMat", Matrix4::Transpose(Matrix4::Invert(m_Camera->GetView() * model)));
     glDrawArrays(GL_TRIANGLES, 0, mesh.GetVertexCount());
     
     mesh.Unbind();

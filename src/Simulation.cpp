@@ -4,6 +4,8 @@
 #include "Math.h"
 #include "Utility.h"
 
+#include <glad/glad.h>
+
 #define CAM_TURN_SPEED 0.1f
 #define CAM_MOVE_SPEED 0.1f
 
@@ -55,22 +57,25 @@ Simulation::~Simulation(void) {}
 
 void Simulation::OnInit(void)
 {
-    float vertices[] = {
-        -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 0.0f,
-         0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 0.0f
-    };
+    glEnable(GL_DEPTH_TEST);
 
     std::vector<int> layout = { 3, 3 };
-
-    m_Mesh.InitData(vertices, sizeof(vertices), layout);
+    m_Mesh.InitData("assets/models/Boid.tri", layout);
+    
     m_Shader.InitShader("assets/shaders/Phong_V.glsl", "assets/shaders/Phong_F.glsl");
 
     m_Renderer.SetShader(&m_Shader);
     m_Renderer.SetCamera(&m_Camera);
+
+    m_Renderer.SetUniformVec3("u_Material.ambient", Vector(0.2f, 0.6f, 0.7f));
+    m_Renderer.SetUniformVec3("u_Material.diffuse", Vector(0.2f, 0.6f, 0.7f));
+    m_Renderer.SetUniformVec3("u_Material.specular", Vector(1.0f, 1.0f, 1.0f));
+    m_Renderer.SetUniformInt("u_Material.shininess", 50);
+
+    m_Renderer.SetUniformVec3("u_Light.ambient", Vector(0.05f, 0.05f, 0.15f));
+    m_Renderer.SetUniformVec3("u_Light.diffuse", Vector(0.7f, 0.7f, 0.7f));
+    m_Renderer.SetUniformVec3("u_Light.specular", Vector(0.8f, 0.8f, 0.8f));
+    m_Renderer.SetUniformVec3("u_Light.direction", Vector(-1.0f, -3.0f, -1.0f));
 }
 
 void Simulation::OnUpdate(void)

@@ -40,7 +40,7 @@ public:
     virtual void Bind(void) const override;
     virtual void Unbind(void) const override;
 
-    void BufferData(float *data, int size, const std::vector<int>& layout);
+    void BufferData(float *data, int vertexCount, const std::vector<int>& layout);
 };
 
 #pragma endregion
@@ -72,6 +72,7 @@ public:
     void Bind(void) const;
     void Unbind(void) const;
 
+    void InitData(const char *path, const std::vector<int>& layout);
     void InitData(float *vertices, int vertexCount, const std::vector<int>& layout);
 
     int GetVertexCount(void) const;
