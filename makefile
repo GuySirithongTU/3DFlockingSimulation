@@ -41,7 +41,7 @@ Input.o: Input.h
 Math.o: Math.h Utility.h
 Renderer.o: Renderer.h Math.h RenderingPrimitives.h
 RenderingPrimitives.o: RenderingPrimitives.h Math.h
-Simulation.o: Application.h Input.h Math.h Utility.h
+Simulation.o: Application.h Input.h Math.h Utility.h RenderingPrimitives.h
 
 define NEWLINE
 

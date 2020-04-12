@@ -63,6 +63,7 @@ public:
 
 #pragma region mesh
 
+class Shader;
 class Mesh
 {
 public:
@@ -72,19 +73,41 @@ public:
     void Bind(void) const;
     void Unbind(void) const;
 
-    void InitData(const char *path, const std::vector<int>& layout);
-    void InitData(float *vertices, int vertexCount, const std::vector<int>& layout);
+    void InitData(const char *path, const std::vector<int>& layout, unsigned int mode, Shader *shader);
+    void InitData(float *vertices, int vertexCount, const std::vector<int>& layout, unsigned int mode, Shader *shader);
 
+    unsigned int GetMode(void) const;
+    Shader *GetShader(void) const;
     int GetVertexCount(void) const;
 
 private:
     VertexBuffer m_VertexBuffer;
     VertexArray m_VertexArray;
+    unsigned int m_Mode;
+    Shader *m_Shader;
 };
 
 #pragma endregion
 
 #pragma region shader
+
+struct Material
+{
+    Color ambient;
+    Color diffuse;
+    Color specular;
+    int shininess;
+
+    bool operator==(const Material& rhs) const;
+};
+
+struct DirLight
+{
+    Color ambient;
+    Color diffuse;
+    Color specular;
+    Vector direction;
+};
 
 class Shader : public Primitive
 {
@@ -105,8 +128,15 @@ public:
     void SetUniformMat3(const char *name, const Matrix3& value);
     void SetUniformMat4(const char *name, const Matrix4& value);
 
+    bool IsEnableNormalMatrixUniform(void) const;
+    void SetEnableNormalMatrixUniform(bool enabled);
+    void SetMaterial(const Material& material);
+    void SetDirLight(const DirLight& light);
+
 private:
     unsigned int CompileShader(const char *path, unsigned int type);
+    Material m_CurrentMaterial = { Color(), Color(), Color(), 0 };
+    bool m_NormalMatrixEnabled = false;
 };
 
 #pragma endregion

@@ -35,16 +35,9 @@ public:
     void Clear(const Color& color);
 
     void SetCamera(Camera *camera);
-    void SetShader(Shader *shader);
-
-    void SetUniformInt(const char *name, int value);
-    void SetUniformFloat(const char *name, float value);
-    void SetUniformVec3(const char *name, const Vector& value);
-    void SetUniformVec4(const char *name, const Vector& value);
-    void SetUniformMat3(const char *name, const Matrix3& value);
-    void SetUniformMat4(const char *name, const Matrix4& value);
+    void AddShader(Shader *shader);
 
 private:
     Camera *m_Camera;
-    Shader *m_Shader = nullptr;
+    std::vector<Shader *> m_Shaders;
 };

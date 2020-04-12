@@ -104,7 +104,10 @@ Vector::Vector(float x, float y, float z)
 Vector Vector::Normalize(const Vector& vec)
 {
     float magnitude = vec.Magnitude();
-    return Tuple(vec.x / magnitude, vec.y / magnitude, vec.z / magnitude, vec.w / magnitude);
+    if(Equal(magnitude, 0.0f))
+        return Tuple(1.0f, 0.0f, 0.0f, vec.w);
+    else
+        return Tuple(vec.x / magnitude, vec.y / magnitude, vec.z / magnitude, vec.w / magnitude);
 }
 
 Vector Vector::Cross(const Vector& lhs, const Vector& rhs)
@@ -250,6 +253,22 @@ Matrix4 Matrix4::Shear(float xy, float xz, float yx, float yz, float zx, float z
     result[2][0] = zx;
     result[2][1] = zy;
     return result;
+}
+
+Matrix4 Matrix4::LookAt(const Vector& direction, const Vector& up)
+{
+    Vector z = Vector::Normalize(-direction);
+    Vector y = Vector::Normalize(up);
+    Vector x = Vector::Normalize(Vector::Cross(y, z));
+    y = Vector::Normalize(Vector::Cross(z, x));
+
+    float result[] = {
+        x.x, y.x, z.x, 0.0f,
+        x.y, y.y, z.y, 0.0f,
+        x.z, y.z, z.z, 0.0,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+    return Matrix4(result);
 }
 
 Matrix4 Matrix4::LookAt(const Point& eye, const Point& at, const Vector& up)

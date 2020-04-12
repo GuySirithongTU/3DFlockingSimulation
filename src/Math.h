@@ -160,6 +160,7 @@ public:
     static Matrix4 RotateY(float a);
     static Matrix4 RotateZ(float a);
     static Matrix4 Shear(float xy, float xz, float yx, float yz, float zx, float zy);
+    static Matrix4 LookAt(const Vector& direction, const Vector& up);
     static Matrix4 LookAt(const Point& eye, const Point& at, const Vector& up);
     static Matrix4 Perspective(float fovY, float aspect, float zNear, float zFar);
     static Matrix4 Frustum(float left, float right, float bottom, float top, float near, float far);

@@ -113,7 +113,7 @@ void Mesh::Unbind(void) const
     m_VertexArray.Unbind();
 }
 
-void Mesh::InitData(const char *path, const std::vector<int>& layout)
+void Mesh::InitData(const char *path, const std::vector<int>& layout, unsigned int mode, Shader *shader)
 {
     // open file
     std::ifstream file(path);
@@ -136,15 +136,27 @@ void Mesh::InitData(const char *path, const std::vector<int>& layout)
     file.close();
     vertexCount = length / attributeCount;
 
-    InitData(vertices.data(), vertexCount, layout);
+    InitData(vertices.data(), vertexCount, layout, mode, shader);
 }
 
-void Mesh::InitData(float *vertices, int vertexCount, const std::vector<int>& layout)
+void Mesh::InitData(float *vertices, int vertexCount, const std::vector<int>& layout, unsigned int mode, Shader *shader)
 {
+    m_Mode = mode;
+    m_Shader = shader;
     m_VertexArray.Init();
     m_VertexArray.Bind();
     m_VertexBuffer.BufferData(vertices, vertexCount, layout);
     m_VertexArray.Unbind();
+}
+
+unsigned int Mesh::GetMode(void) const
+{
+    return m_Mode;
+}
+
+Shader *Mesh::GetShader(void) const
+{
+    return m_Shader;
 }
 
 int Mesh::GetVertexCount(void) const
@@ -155,6 +167,14 @@ int Mesh::GetVertexCount(void) const
 #pragma endregion
 
 #pragma region shader
+
+bool Material::operator==(const Material& rhs) const
+{
+    return  ambient == rhs.ambient &&
+            diffuse == rhs.diffuse &&
+            specular == rhs.specular &&
+            shininess == rhs.shininess;
+}
 
 Shader::Shader(void) {}
 Shader::~Shader()
@@ -292,6 +312,35 @@ void Shader::SetUniformMat4(const char *name, const Matrix4& value)
     }
     else
         std::cout << "SHADER::ERROR: uniform not found: " << name << std::endl;
+}
+
+bool Shader::IsEnableNormalMatrixUniform(void) const
+{
+    return m_NormalMatrixEnabled;
+}
+
+void Shader::SetEnableNormalMatrixUniform(bool enabled)
+{
+    m_NormalMatrixEnabled = enabled;
+}
+
+void Shader::SetMaterial(const Material& material)
+{
+    //if(!(material == m_CurrentMaterial)) {
+        SetUniformVec3("u_Material.ambient", Vector(material.ambient.r, material.ambient.g, material.ambient.b));
+        SetUniformVec3("u_Material.diffuse", Vector(material.diffuse.r, material.diffuse.g, material.diffuse.b));
+        SetUniformVec3("u_Material.specular", Vector(material.specular.r, material.specular.g, material.specular.b));
+        SetUniformInt("u_Material.shininess", material.shininess);
+        m_CurrentMaterial = material;
+    //}
+}
+
+void Shader::SetDirLight(const DirLight& light)
+{
+    SetUniformVec3("u_Light.ambient", Vector(light.ambient.r, light.ambient.g, light.ambient.b));
+    SetUniformVec3("u_Light.diffuse", Vector(light.diffuse.r, light.diffuse.g, light.diffuse.b));
+    SetUniformVec3("u_Light.specular", Vector(light.specular.r, light.specular.g, light.specular.b));
+    SetUniformVec3("u_Light.direction", light.direction);
 }
 
 #pragma endregion

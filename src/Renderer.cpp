@@ -18,27 +18,35 @@ Renderer *Renderer::GetInstance()
     return s_Instance;
 }
 
-Renderer::Renderer(void) {}
+Renderer::Renderer(void)
+{
+    if(s_Instance == nullptr) {
+        s_Instance = this;
+    } else {
+        std::cout << "RENDERER::ERROR: creating second renderer" << std::endl;
+        return;
+    }
+}
+
 Renderer::~Renderer() {}
 
 void Renderer::BeginScene(void)
 {
-    SetUniformMat4("u_View", m_Camera->GetView());
-    SetUniformMat4("u_Projection", m_Camera->GetProjection());
+    for(std::vector<Shader *>::iterator it = m_Shaders.begin(); it != m_Shaders.end(); it++) {
+        (*it)->Bind();
+        (*it)->SetUniformMat4("u_View", m_Camera->GetView());
+        (*it)->SetUniformMat4("u_Projection", m_Camera->GetProjection());
+    }
 }
 
 void Renderer::DrawMesh(const Mesh& mesh, const Matrix4& model)
 {
-    if(m_Shader == nullptr) {
-        std::cout << "RENDERER::ERROR: drawing mesh when shader is not binded" << std::endl;
-        return;
-    }
-
-    m_Shader->Bind();
+    mesh.GetShader()->Bind();
     mesh.Bind();
-    m_Shader->SetUniformMat4("u_Model", model);
-    m_Shader->SetUniformMat4("u_NormalMat", Matrix4::Transpose(Matrix4::Invert(m_Camera->GetView() * model)));
-    glDrawArrays(GL_TRIANGLES, 0, mesh.GetVertexCount());
+    mesh.GetShader()->SetUniformMat4("u_Model", model);
+    if(mesh.GetShader()->IsEnableNormalMatrixUniform())
+        mesh.GetShader()->SetUniformMat4("u_NormalMat", Matrix4::Transpose(Matrix4::Invert(m_Camera->GetView() * model)));
+    glDrawArrays(mesh.GetMode(), 0, mesh.GetVertexCount());
     
     mesh.Unbind();
 }
@@ -49,76 +57,16 @@ void Renderer::Clear(const Color& color)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void Renderer::AddShader(Shader *shader)
+{
+    m_Shaders.push_back(shader);
+}
+
 #pragma region setters
 
 void Renderer::SetCamera(Camera *camera)
 {
     m_Camera = camera;
-}
-
-void Renderer::SetShader(Shader *shader)
-{
-    m_Shader = shader;
-}
-
-void Renderer::SetUniformInt(const char *name, int value)
-{
-    if(m_Shader == nullptr)
-        std::cout << "RENDERER::ERROR: drawing mesh when shader is not binded" << std::endl;
-    else {
-        m_Shader->Bind();
-        m_Shader->SetUniformInt(name, value);
-    }
-}
-
-void Renderer::SetUniformFloat(const char *name, float value)
-{
-    if(m_Shader == nullptr)
-        std::cout << "RENDERER::ERROR: drawing mesh when shader is not binded" << std::endl;
-    else {
-        m_Shader->Bind();
-        m_Shader->SetUniformFloat(name, value);
-    }
-}
-
-void Renderer::SetUniformVec3(const char *name, const Vector& value)
-{
-    if(m_Shader == nullptr)
-        std::cout << "RENDERER::ERROR: drawing mesh when shader is not binded" << std::endl;
-    else {
-        m_Shader->Bind();
-        m_Shader->SetUniformVec3(name, value);
-    }
-}
-
-void Renderer::SetUniformVec4(const char *name, const Vector& value)
-{
-    if(m_Shader == nullptr)
-        std::cout << "RENDERER::ERROR: drawing mesh when shader is not binded" << std::endl;
-    else {
-        m_Shader->Bind();
-        m_Shader->SetUniformVec4(name, value);
-    }
-}
-
-void Renderer::SetUniformMat3(const char *name, const Matrix3& value)
-{
-    if(m_Shader == nullptr)
-        std::cout << "RENDERER::ERROR: drawing mesh when shader is not binded" << std::endl;
-    else {
-        m_Shader->Bind();
-        m_Shader->SetUniformMat3(name, value);
-    }
-}
-
-void Renderer::SetUniformMat4(const char *name, const Matrix4& value)
-{
-    if(m_Shader == nullptr)
-        std::cout << "RENDERER::ERROR: drawing mesh when shader is not binded" << std::endl;
-    else {
-        m_Shader->Bind();
-        m_Shader->SetUniformMat4(name, value);
-    }
 }
 
 #pragma endregion
