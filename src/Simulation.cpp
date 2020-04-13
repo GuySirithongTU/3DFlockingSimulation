@@ -75,6 +75,16 @@ void FlyerCamera::SetPosition(const Point& position)
 
 Mesh Boid::s_Mesh;
 
+float Boid::s_MaxSpeed = 0.2f;
+float Boid::s_MaxForce = 0.1f;
+float Boid::s_ArrivalDistance = 2.0f;
+float Boid::s_SeparateDistance = 0.5f;
+float Boid::s_AlignDistance = 2.0f;
+float Boid::s_CohereDistance = 2.0f;
+float Boid::s_SeparateWeight = 1.0f;
+float Boid::s_AlignWeight = 1.0f;
+float Boid::s_CohereWeight = 1.0f;
+
 Boid::Boid(void) {}
 
 Boid::~Boid() {}
@@ -87,7 +97,10 @@ void Boid::InitMesh(Shader *shader)
 
 void Boid::OnUpdate(void)
 {
-    Seek({ 5.0f, 5.0f, 5.0f });
+    Separate();
+    Align();
+    Cohere();
+    
     OnPhysicsUpdate();
 }
 
@@ -122,9 +135,9 @@ void Boid::OnPhysicsUpdate(void)
 {
     // update velocity
     m_Velocity = m_Velocity + m_Acceleration;
-    if(m_Velocity.Magnitude() > m_MaxSpeed) {
+    if(m_Velocity.Magnitude() > s_MaxSpeed) {
         m_Velocity.Normalize();
-        m_Velocity = m_MaxSpeed * m_Velocity;
+        m_Velocity = s_MaxSpeed * m_Velocity;
     }
 
     // update forward
@@ -145,24 +158,90 @@ void Boid::AddForce(const Vector& force)
 void Boid::Steer(const Vector& desired)
 {
     Vector force = desired - m_Velocity;
-    if(force.Magnitude() > m_MaxForce) {
+    if(force.Magnitude() > s_MaxForce) {
         force.Normalize();
-        force = m_MaxForce * force;
+        force = s_MaxForce * force;
     }
     AddForce(force);
 }
 
-void Boid::Seek(const Point& target)
+void Boid::Seek(const Point& target, float speed)
 {
     Vector offset = target - m_Position;
     Vector direction = Vector::Normalize(offset);
     float distance = offset.Magnitude();
 
-    Vector desired = m_MaxSpeed * direction;
-    if(distance < m_ArrivalDistance)
-        desired = (distance / m_ArrivalDistance) * desired;
+    Vector desired = speed * direction;
+    if(distance < s_ArrivalDistance)
+        desired = (distance / s_ArrivalDistance) * desired;
     
     Steer(desired);
+}
+
+void Boid::Separate(void)
+{
+    Boid *boids = Simulation::GetInstance()->GetBoids();
+
+    for(int i = 0; i < BOID_COUNT; i++) {
+        if(boids + i == this)
+            continue;
+
+        Vector offset = m_Position - boids[i].m_Position;
+        float distance = offset.Magnitude();
+
+        if(distance <= s_SeparateDistance) {
+            Vector desired = Vector::Normalize(offset);
+            desired = Clamp(s_SeparateDistance / distance, 0.0f, s_MaxSpeed) * s_SeparateWeight * desired;
+            Steer(desired);
+        }
+    }
+}
+
+void Boid::Align(void)
+{
+    Boid *boids = Simulation::GetInstance()->GetBoids();
+    
+    Vector averageForward;
+
+    for(int i = 0; i < BOID_COUNT; i++) {
+        if(boids + i == this)
+            continue;
+        
+        float distance = ((Vector)(m_Position - boids[i].m_Position)).Magnitude();
+
+        if(distance <= s_AlignDistance)
+            averageForward = averageForward + boids[i].m_Forward;
+    }
+
+    // TODO
+    averageForward.Normalize();
+    averageForward = s_MaxSpeed * s_AlignWeight * averageForward;
+    Steer(averageForward);
+}
+
+void Boid::Cohere(void)
+{
+    Boid *boids = Simulation::GetInstance()->GetBoids();
+
+    Vector averagePosition;
+    int count = 0;
+
+    for(int i = 0; i < BOID_COUNT; i++) {
+        if(boids + i == this)
+            continue;
+        
+        float distance = ((Vector)(m_Position - boids[i].m_Position)).Magnitude();
+
+        if(distance <= s_CohereDistance) {
+            averagePosition = averagePosition + boids[i].m_Position;
+            count++;
+        }
+    }
+
+    if(count > 1)
+        averagePosition = (1.0f / count) * averagePosition;
+
+    Seek(averagePosition, s_MaxSpeed * s_CohereWeight);
 }
 
 #pragma endregion
@@ -171,7 +250,23 @@ void Boid::Seek(const Point& target)
 
 #define BOUND_SIZE 50.0f
 
-Simulation::Simulation(void) {}
+Simulation *Simulation::s_Instance = nullptr;
+Simulation *Simulation::GetInstance(void)
+{
+    return s_Instance;
+}
+
+Simulation::Simulation(void)
+{
+    if(s_Instance == nullptr) {
+        s_Instance = this;
+    } else {
+        std::cout << "creating second simulation" << std::endl;
+        return;
+    }
+    
+}
+
 Simulation::~Simulation() {}
 
 void Simulation::OnInit(void)
@@ -206,7 +301,9 @@ void Simulation::OnInit(void)
         { 1.0f, 1.0f, 1.0f },
         50
     });
-    m_Boid.SetMaterial(&m_BoidMaterial);
+    for(int i = 0; i < BOID_COUNT; i++) {
+        m_Boids[i].SetMaterial(&m_BoidMaterial);
+    }
 
     // init bound data
     std::vector<int> layout = { 3 };
@@ -221,9 +318,18 @@ void Simulation::OnUpdate(void)
     m_Renderer.BeginScene();
     m_Renderer.Clear({ 1.0f, 0.0f, 1.0f, 1.0f });
     
-    m_Boid.OnUpdate();
-    m_Boid.OnDraw();
+    for(int i = 0; i < BOID_COUNT; i++)
+        m_Boids[i].OnUpdate();
+    
+    for(int i = 0; i < BOID_COUNT; i++)
+        m_Boids[i].OnDraw();
+    
     m_Renderer.DrawMesh(m_BoundMesh, Matrix4::Scale(BOUND_SIZE, BOUND_SIZE, BOUND_SIZE));
+}
+
+Boid *Simulation::GetBoids(void)
+{
+    return m_Boids;
 }
 
 #pragma endregion

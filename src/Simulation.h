@@ -34,6 +34,8 @@ private:
 
 #pragma region boid
 
+#define BOID_COUNT 10
+
 class Boid
 {
 public:
@@ -50,7 +52,10 @@ private:
     void OnPhysicsUpdate(void);
     void AddForce(const Vector& force);
     void Steer(const Vector& desired);
-    void Seek(const Point& target);
+    void Seek(const Point& target, float speed);
+    void Separate(void);
+    void Align(void);
+    void Cohere(void);
 
 private:
     Point m_Position;
@@ -58,25 +63,36 @@ private:
     Vector m_Acceleration;
     Vector m_Forward = Vector(0.0f, 0.0f, -1.0f);
     float m_Mass = 20.0f;
-    float m_ArrivalDistance = 2.0f;
-    float m_MaxSpeed = 0.2f;
-    float m_MaxForce = 0.1f;
 
     static Mesh s_Mesh;
     const Material *m_Material;
+
+    static float s_MaxSpeed;
+    static float s_MaxForce;
+    static float s_ArrivalDistance;
+    static float s_SeparateDistance;
+    static float s_AlignDistance;
+    static float s_CohereDistance;
+    static float s_SeparateWeight;
+    static float s_AlignWeight;
+    static float s_CohereWeight;
 };
 
 #pragma endregion
 
 #pragma region simulation
 
-#define BOID_COUNT 1
-
 class Simulation : public Application
 {
 public:
+    static Simulation *GetInstance(void);
+private:
+    static Simulation *s_Instance;
+public:
     Simulation(void);
     virtual ~Simulation();
+
+    Boid *GetBoids(void);
 
 protected:
     virtual void OnInit() override;
@@ -88,7 +104,7 @@ private:
     Material m_BoidMaterial;
     FlyerCamera m_Camera;
 
-    Boid m_Boid;
+    Boid m_Boids[BOID_COUNT];
     Mesh m_BoundMesh;
 };
 
