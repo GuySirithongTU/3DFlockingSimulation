@@ -22,3 +22,8 @@ T Clamp(T val, T min, T max)
         val = max;
     return val;
 }
+
+struct Vector;
+
+float Random(float min, float max);
+Vector RandomUnitSphere(void);

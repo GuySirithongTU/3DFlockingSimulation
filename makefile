@@ -41,7 +41,7 @@ Input.o: Input.h
 Math.o: Math.h Utility.h
 Renderer.o: Renderer.h Math.h RenderingPrimitives.h
 RenderingPrimitives.o: RenderingPrimitives.h Math.h
-Simulation.o: Application.h Input.h Math.h Utility.h RenderingPrimitives.h
+Simulation.o: Simulation.h Application.h Input.h Math.h Utility.h RenderingPrimitives.h
 
 define NEWLINE
 
@@ -50,4 +50,6 @@ endef
 
 clean:
 	$(RM) $(subst /,\,$(OBJ)) $(EXE)
+
+cleanall: clean
 	$(foreach mod,$(MODS),$(MAKE) -C $(mod) -f makefile clean$(NEWLINE))

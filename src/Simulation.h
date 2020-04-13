@@ -34,7 +34,8 @@ private:
 
 #pragma region boid
 
-#define BOID_COUNT 10
+#define BOUND_SIZE 50.0f
+#define BOID_COUNT 100
 
 class Boid
 {
@@ -46,7 +47,10 @@ public:
     void OnUpdate(void);
     void OnDraw(void) const;
 
+    void SetPosition(const Point& position);
+    void SetVelocity(const Vector& velocity);
     void SetMaterial(const Material *material);
+    static float GetMaxSpeed(void);
 
 private:
     void OnPhysicsUpdate(void);
@@ -56,6 +60,7 @@ private:
     void Separate(void);
     void Align(void);
     void Cohere(void);
+    void Mirror(void);
 
 private:
     Point m_Position;

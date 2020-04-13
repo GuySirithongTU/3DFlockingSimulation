@@ -75,12 +75,12 @@ void FlyerCamera::SetPosition(const Point& position)
 
 Mesh Boid::s_Mesh;
 
-float Boid::s_MaxSpeed = 0.2f;
+float Boid::s_MaxSpeed = 0.8f;
 float Boid::s_MaxForce = 0.1f;
-float Boid::s_ArrivalDistance = 2.0f;
-float Boid::s_SeparateDistance = 0.5f;
-float Boid::s_AlignDistance = 2.0f;
-float Boid::s_CohereDistance = 2.0f;
+float Boid::s_ArrivalDistance = 5.0f;
+float Boid::s_SeparateDistance = 2.0f;
+float Boid::s_AlignDistance = 10.0f;
+float Boid::s_CohereDistance = 10.0f;
 float Boid::s_SeparateWeight = 1.0f;
 float Boid::s_AlignWeight = 1.0f;
 float Boid::s_CohereWeight = 1.0f;
@@ -100,6 +100,8 @@ void Boid::OnUpdate(void)
     Separate();
     Align();
     Cohere();
+
+    Mirror();
     
     OnPhysicsUpdate();
 }
@@ -126,9 +128,24 @@ void Boid::OnDraw(void) const
     Renderer::GetInstance()->DrawMesh(s_Mesh, model);
 }
 
+void Boid::SetPosition(const Point& position)
+{
+    m_Position = position;
+}
+
+void Boid::SetVelocity(const Vector& velocity)
+{
+    m_Velocity = velocity;
+}
+
 void Boid::SetMaterial(const Material *material)
 {
     m_Material = material;
+}
+
+float Boid::GetMaxSpeed(void)
+{
+    return s_MaxSpeed;
 }
 
 void Boid::OnPhysicsUpdate(void)
@@ -244,11 +261,25 @@ void Boid::Cohere(void)
     Seek(averagePosition, s_MaxSpeed * s_CohereWeight);
 }
 
+void Boid::Mirror(void)
+{
+    float radius = BOUND_SIZE * 0.5f;
+    
+    Point mirrored = m_Position;
+
+    if(m_Position.x > radius)       mirrored.x = -2.0f * radius + m_Position.x;
+    else if(m_Position.x < -radius) mirrored.x =  2.0f * radius + m_Position.x;
+    if(m_Position.y > radius)       mirrored.y = -2.0f * radius + m_Position.y;
+    else if(m_Position.y < -radius) mirrored.y =  2.0f * radius + m_Position.y;
+    if(m_Position.z > radius)       mirrored.z = -2.0f * radius + m_Position.z;
+    else if(m_Position.z < -radius) mirrored.z =  2.0f * radius + m_Position.z;
+    
+    m_Position = mirrored;
+}
+
 #pragma endregion
 
 #pragma region simulation
-
-#define BOUND_SIZE 50.0f
 
 Simulation *Simulation::s_Instance = nullptr;
 Simulation *Simulation::GetInstance(void)
@@ -303,6 +334,11 @@ void Simulation::OnInit(void)
     });
     for(int i = 0; i < BOID_COUNT; i++) {
         m_Boids[i].SetMaterial(&m_BoidMaterial);
+        m_Boids[i].SetPosition(Vector(
+            Random(-BOUND_SIZE / 2.0f, BOUND_SIZE / 2.0f),
+            Random(-BOUND_SIZE / 2.0f, BOUND_SIZE / 2.0f),
+            Random(-BOUND_SIZE / 2.0f, BOUND_SIZE / 2.0f)));
+        m_Boids[i].SetVelocity(Boid::GetMaxSpeed() * RandomUnitSphere());
     }
 
     // init bound data
