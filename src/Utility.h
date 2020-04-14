@@ -6,6 +6,7 @@
 #define PI 3.14159f
 #define DEG_TO_RAD(x) ((x) * PI / 180.0f)
 #define RAD_TO_DEG(x) ((x) * 180.0f / PI)
+#define BIT(x) (1 << x)
 
 template<typename T>
 bool Equal(T lhs, T rhs)

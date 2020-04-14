@@ -295,7 +295,6 @@ Simulation::Simulation(void)
         std::cout << "creating second simulation" << std::endl;
         return;
     }
-    
 }
 
 Simulation::~Simulation() {}
@@ -305,12 +304,12 @@ void Simulation::OnInit(void)
     glEnable(GL_DEPTH_TEST);
 
     // init shaders
+    m_PhongShader.SetFlags(ShaderFlag::Model | ShaderFlag::NormalMatrix);
     m_PhongShader.InitShader("assets/shaders/Phong_V.glsl", "assets/shaders/Phong_F.glsl");
-    m_PhongShader.SetEnableNormalMatrixUniform(true);
+    m_UnlitShader.SetFlags(ShaderFlag::Model);
     m_UnlitShader.InitShader("assets/shaders/Unlit_V.glsl", "assets/shaders/Unlit_F.glsl");
+    m_SkyboxShader.SetFlags(ShaderFlag::NoTranslateView);
     m_SkyboxShader.InitShader("assets/shaders/Skybox_V.glsl", "assets/shaders/Skybox_F.glsl");
-    m_SkyboxShader.SetEnableNoTranslateView(true);
-    m_SkyboxShader.SetEnableNoModel(true);
     m_SkyboxShader.Bind();
     m_SkyboxShader.SetUniformInt("u_Skybox", 0);
     m_Renderer.AddShader(&m_PhongShader);
@@ -395,9 +394,26 @@ void Simulation::OnGUIRender(void)
     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();
     
-    ImGui::Begin("test window");
-    static float f = 1.0f;
-    ImGui::SliderFloat("test", &f, 0.0f, 2.0f);
+    ImGui::Begin("Flocking");
+
+    if(ImGui::CollapsingHeader("Limits", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Max Speed", &Boid::s_MaxSpeed, 0.1f, 2.0f);
+        ImGui::SliderFloat("Max Force", &Boid::s_MaxForce, 0.01f, 0.2f);
+    }
+
+    if(ImGui::CollapsingHeader("Distances", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Arrival Distance",  &Boid::s_ArrivalDistance, 1.0f, 20.0f);
+        ImGui::SliderFloat("Separate Distance", &Boid::s_SeparateDistance, 1.0f, 20.0f);
+        ImGui::SliderFloat("Align Distance",    &Boid::s_AlignDistance, 1.0f, 20.0f);
+        ImGui::SliderFloat("Cohere Distance",   &Boid::s_CohereDistance, 1.0f, 20.0f);
+    }
+    
+    if(ImGui::CollapsingHeader("Weights", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Separate Weight",   &Boid::s_SeparateWeight, 0.0f, 2.0f);
+        ImGui::SliderFloat("Align Weight",   &Boid::s_AlignWeight, 0.0f, 2.0f);
+        ImGui::SliderFloat("Cohere Weight",   &Boid::s_CohereWeight, 0.0f, 2.0f);
+    }
+
     ImGui::End();
 }
 

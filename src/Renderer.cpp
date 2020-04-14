@@ -42,7 +42,7 @@ void Renderer::BeginScene(void)
 {
     for(std::vector<Shader *>::iterator it = m_Shaders.begin(); it != m_Shaders.end(); it++) {
         (*it)->Bind();
-        if((*it)->IsEnableNoTranslateView())
+        if((*it)->GetFlag(ShaderFlag::NoTranslateView))
             (*it)->SetUniformMat4("u_View", m_Camera->GetNoTranslateView());
         else
             (*it)->SetUniformMat4("u_View", m_Camera->GetView());
@@ -54,9 +54,9 @@ void Renderer::DrawMesh(const Mesh& mesh, const Matrix4& model)
 {
     mesh.GetShader()->Bind();
     mesh.Bind();
-    if(!mesh.GetShader()->IsEnableNoModel())
+    if(mesh.GetShader()->GetFlag(ShaderFlag::Model))
         mesh.GetShader()->SetUniformMat4("u_Model", model);
-    if(mesh.GetShader()->IsEnableNormalMatrixUniform())
+    if(mesh.GetShader()->GetFlag(ShaderFlag::NormalMatrix))
         mesh.GetShader()->SetUniformMat4("u_NormalMat", Matrix4::Transpose(Matrix4::Invert(m_Camera->GetView() * model)));
     glDrawArrays(mesh.GetMode(), 0, mesh.GetVertexCount());
     

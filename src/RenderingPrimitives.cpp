@@ -237,7 +237,9 @@ bool Material::operator==(const Material& rhs) const
             shininess == rhs.shininess;
 }
 
-Shader::Shader(void) {}
+Shader::Shader(unsigned char flags)
+    : m_Flags(flags) {}
+
 Shader::~Shader()
 {
     if(m_Initialized)
@@ -375,34 +377,27 @@ void Shader::SetUniformMat4(const char *name, const Matrix4& value)
         std::cout << "SHADER::ERROR: uniform not found: " << name << std::endl;
 }
 
-bool Shader::IsEnableNormalMatrixUniform(void) const
+bool Shader::GetFlag(ShaderFlag flag) const
 {
-    return m_NormalMatrixEnabled;
+    return m_Flags & flag;
 }
 
-void Shader::SetEnableNormalMatrixUniform(bool enabled)
+void Shader::SetFlag(ShaderFlag flag, bool value)
 {
-    m_NormalMatrixEnabled = enabled;
+    if(value)
+        m_Flags |= flag;
+    else
+        m_Flags &= ~flag;
 }
 
-bool Shader::IsEnableNoTranslateView(void) const
+unsigned char Shader::GetFlags(void) const
 {
-    return m_NoTranslateView;
+    return m_Flags;
 }
 
-void Shader::SetEnableNoTranslateView(bool enabled)
+void Shader::SetFlags(unsigned char flags)
 {
-    m_NoTranslateView = enabled;
-}
-
-bool Shader::IsEnableNoModel(void) const
-{
-    return m_NoModel;
-}
-
-void Shader::SetEnableNoModel(bool enabled)
-{
-    m_NoModel = enabled;
+    m_Flags = flags;
 }
 
 void Shader::SetMaterial(const Material& material)

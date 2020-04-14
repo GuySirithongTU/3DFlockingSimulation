@@ -81,6 +81,9 @@ private:
     static float s_SeparateWeight;
     static float s_AlignWeight;
     static float s_CohereWeight;
+
+private:
+    friend class Simulation;
 };
 
 #pragma endregion
@@ -104,7 +107,7 @@ protected:
     virtual void OnUpdate(void) override;
     virtual void OnRender(void) override;
     virtual void OnGUIRender(void) override;
-    
+
 private:
     // shaders
     Shader m_PhongShader;

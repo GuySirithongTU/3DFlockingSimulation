@@ -127,10 +127,17 @@ struct DirLight
     Vector direction;
 };
 
+enum ShaderFlag
+{
+    Model               = BIT(0),
+    NormalMatrix        = BIT(1),
+    NoTranslateView     = BIT(2)
+};
+
 class Shader : public Primitive
 {
 public:
-    Shader(void);
+    Shader(unsigned char flags = 0);
     ~Shader();
 
     virtual void Bind(void) const override;
@@ -146,21 +153,18 @@ public:
     void SetUniformMat3(const char *name, const Matrix3& value);
     void SetUniformMat4(const char *name, const Matrix4& value);
 
-    bool IsEnableNormalMatrixUniform(void) const;
-    void SetEnableNormalMatrixUniform(bool enabled);
-    bool IsEnableNoTranslateView(void) const;
-    void SetEnableNoTranslateView(bool enabled);
-    bool IsEnableNoModel(void) const;
-    void SetEnableNoModel(bool enabled);
+    bool GetFlag(ShaderFlag flag) const;
+    void SetFlag(ShaderFlag flag, bool value);
+    unsigned char GetFlags(void) const;
+    void SetFlags(unsigned char flags);
+
     void SetMaterial(const Material& material);
     void SetDirLight(const DirLight& light);
 
 private:
     unsigned int CompileShader(const char *path, unsigned int type);
     Material m_CurrentMaterial = { Color(), Color(), Color(), 0 };
-    bool m_NormalMatrixEnabled = false;
-    bool m_NoTranslateView = false;
-    bool m_NoModel = false;
+    unsigned char m_Flags = 0;
 };
 
 #pragma endregion
