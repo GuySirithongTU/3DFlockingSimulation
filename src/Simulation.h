@@ -6,6 +6,12 @@
 
 #pragma region flyer_camera
 
+enum class FlyerMode
+{
+    Ghost = 0,
+    AlphaTrack
+};
+
 class FlyerCamera : public Camera
 {
 public:
@@ -13,8 +19,14 @@ public:
     ~FlyerCamera();
 
     void OnUpdate(void);
+    void OnResize(int width, int height);
 
     void SetPosition(const Point& position);
+    void SetMode(FlyerMode mode);
+
+private:
+    void UpdateFlyer(void);
+    void UpdateAlphaTrack(void);
 
 private:
     Point m_Position = Point(0.0f, 0.0f, 3.0f);
@@ -28,6 +40,8 @@ private:
 
     std::pair<int, int> m_PrevMousePosition;
     bool m_PrevMouseHold = false;
+
+    FlyerMode m_Mode = FlyerMode::Ghost;
 };
 
 #pragma endregion
@@ -44,25 +58,26 @@ public:
     ~Boid();
 
     static void InitMesh(Shader *shader); 
-    void OnUpdate(void);
+    virtual void OnUpdate(void);
     void OnDraw(void) const;
 
+    Point GetPosition(void) const;
     void SetPosition(const Point& position);
     void SetVelocity(const Vector& velocity);
     void SetMaterial(const Material *material);
     static float GetMaxSpeed(void);
 
-private:
+protected:
     void OnPhysicsUpdate(void);
     void AddForce(const Vector& force);
-    void Steer(const Vector& desired);
-    void Seek(const Point& target, float speed);
+    void Steer(const Vector& desired, float weight);
+    void Seek(const Point& target, float speed, float weight);
     void Separate(void);
     void Align(void);
     void Cohere(void);
     void Mirror(void);
 
-private:
+protected:
     Point m_Position;
     Vector m_Velocity;
     Vector m_Acceleration;
@@ -72,18 +87,33 @@ private:
     static Mesh s_Mesh;
     const Material *m_Material;
 
-    static float s_MaxSpeed;
-    static float s_MaxForce;
-    static float s_ArrivalDistance;
-    static float s_SeparateDistance;
-    static float s_AlignDistance;
-    static float s_CohereDistance;
-    static float s_SeparateWeight;
-    static float s_AlignWeight;
-    static float s_CohereWeight;
+    static float s_MaxSpeed, s_MaxForce;
+    static float s_ArrivalDistance, s_SeparateDistance, s_AlignDistance, s_CohereDistance;
+    static float s_SeparateWeight, s_AlignWeight, s_CohereWeight, s_AlphaAlignWeight, s_AlphaCohereWeight;
 
 private:
     friend class Simulation;
+};
+
+#pragma endregion
+
+#pragma region alpha_boid
+
+class AlphaBoid : public Boid
+{
+public:
+    AlphaBoid(void);
+    ~AlphaBoid();
+
+    virtual void OnUpdate(void) override;
+
+    float GetPitch(void) const;
+    float GetYaw(void) const;
+
+private:
+    float m_Pitch = 0.0f;
+    float m_Yaw = 0.0f;
+    float m_Speed = 0.4f;
 };
 
 #pragma endregion
@@ -101,12 +131,14 @@ public:
     virtual ~Simulation();
 
     Boid *GetBoids(void);
+    AlphaBoid *GetAlphaBoid(void);
 
 protected:
     virtual void OnInit(void) override;
     virtual void OnUpdate(void) override;
     virtual void OnRender(void) override;
     virtual void OnGUIRender(void) override;
+    virtual void OnResize(int width, int height) override;
 
 private:
     // shaders
@@ -118,12 +150,16 @@ private:
 
     // boids
     Material m_BoidMaterial;
+    Material m_AlphaBoidMaterial;
     Boid m_Boids[BOID_COUNT];
+    AlphaBoid m_AlphaBoid;
     
     // bound and skybox
     Mesh m_BoundMesh;
     Mesh m_SkyboxMesh;
     CubeMap m_Skybox;
+
+    bool m_TrackingAlpha = false;
 };
 
 #pragma endregion

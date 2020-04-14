@@ -70,6 +70,8 @@ void Window::ResizeCallback(GLFWwindow *window, int width, int height)
     Application::GetInstance()->GetWindow()->m_Width = width;
     Application::GetInstance()->GetWindow()->m_Height = height;
     glViewport(0, 0, width, height);
+
+    Application::GetInstance()->OnResize(width, height);
 }
 
 Window::~Window()
@@ -166,5 +168,6 @@ void Application::OnInit(void) {}
 void Application::OnUpdate(void) {}
 void Application::OnRender(void) {}
 void Application::OnGUIRender(void) {}
+void Application::OnResize(int width, int height) {}
 
 #pragma endregion

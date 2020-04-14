@@ -51,9 +51,13 @@ protected:
     virtual void OnUpdate(void);
     virtual void OnRender(void);
     virtual void OnGUIRender(void);
+    virtual void OnResize(int width, int height);
 
 protected:
     Window *m_Window;
     Renderer m_Renderer;
     Input m_Input;
+
+private:
+    friend class Window;
 };

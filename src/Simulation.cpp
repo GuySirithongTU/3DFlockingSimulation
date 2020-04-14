@@ -10,15 +10,31 @@
 
 #define CAM_TURN_SPEED 0.1f
 #define CAM_MOVE_SPEED 1.0f
+#define CAM_TRACK_POS_OFFSET Vector(0.0f, 2.0f, 6.0f)
+#define CAM_TRACK_FOCUS_OFFSET Vector(0.0f, 2.0f, 0.0f)
 
 FlyerCamera::FlyerCamera(void)
 {
     m_PrevMousePosition = Input::GetInstance()->GetMousePosition();
+    m_Projection = Matrix4::Perspective(m_FieldOfView, Application::GetInstance()->GetWindow()->GetAspect(), m_Near, m_Far);
 }
 
 FlyerCamera::~FlyerCamera() {}
 
 void FlyerCamera::OnUpdate(void)
+{
+    switch(m_Mode)
+    {
+        case FlyerMode::Ghost:
+            UpdateFlyer();
+            break;
+        case FlyerMode::AlphaTrack:
+            UpdateAlphaTrack();
+            break;
+    }
+}
+
+void FlyerCamera::UpdateFlyer(void)
 {
     // get mouse move
     std::pair<int, int> cursorPosition = Input::GetInstance()->GetMousePosition();
@@ -61,12 +77,34 @@ void FlyerCamera::OnUpdate(void)
         m_Position = m_Position - CAM_MOVE_SPEED * m_Up;
 
     m_View = Matrix4::LookAt(m_Position, m_Position + forward, m_Up);
-    m_Projection = Matrix4::Perspective(m_FieldOfView, Application::GetInstance()->GetWindow()->GetAspect(), m_Near, m_Far);
+}
+
+void FlyerCamera::UpdateAlphaTrack(void)
+{
+    Point alphaPosition = Simulation::GetInstance()->GetAlphaBoid()->GetPosition();
+    float pitch = Simulation::GetInstance()->GetAlphaBoid()->GetPitch();
+    float yaw = Simulation::GetInstance()->GetAlphaBoid()->GetYaw();
+
+    Matrix4 orient = Matrix4::RotateY(yaw) * Matrix4::RotateX(pitch);
+    Point position = (orient * CAM_TRACK_POS_OFFSET) + alphaPosition;
+    Point focus = (orient * CAM_TRACK_FOCUS_OFFSET) + alphaPosition;
+    
+    m_View = Matrix4::LookAt(position, focus, Vector(0.0f, 1.0f, 0.0f));
+}
+
+void FlyerCamera::OnResize(int width, int height)
+{
+    m_Projection = Matrix4::Perspective(m_FieldOfView, (float)width / (float)height, m_Near, m_Far);
 }
 
 void FlyerCamera::SetPosition(const Point& position)
 {
     m_Position = position;
+}
+
+void FlyerCamera::SetMode(FlyerMode mode)
+{
+    m_Mode = mode;
 }
 
 #pragma endregion
@@ -84,6 +122,8 @@ float Boid::s_CohereDistance = 10.0f;
 float Boid::s_SeparateWeight = 1.0f;
 float Boid::s_AlignWeight = 1.0f;
 float Boid::s_CohereWeight = 1.0f;
+float Boid::s_AlphaAlignWeight = 0.2f;
+float Boid::s_AlphaCohereWeight = 0.2f;
 
 Boid::Boid(void) {}
 
@@ -101,9 +141,9 @@ void Boid::OnUpdate(void)
     Align();
     Cohere();
 
-    Mirror();
-    
     OnPhysicsUpdate();
+
+    Mirror();
 }
 
 void Boid::OnDraw(void) const
@@ -126,6 +166,11 @@ void Boid::OnDraw(void) const
     
     // draw mesh
     Renderer::GetInstance()->DrawMesh(s_Mesh, model);
+}
+
+Point Boid::GetPosition(void) const
+{
+    return m_Position;
 }
 
 void Boid::SetPosition(const Point& position)
@@ -172,17 +217,17 @@ void Boid::AddForce(const Vector& force)
     m_Acceleration = m_Acceleration + (1.0f / m_Mass) * force;
 }
 
-void Boid::Steer(const Vector& desired)
+void Boid::Steer(const Vector& desired, float weight)
 {
     Vector force = desired - m_Velocity;
     if(force.Magnitude() > s_MaxForce) {
         force.Normalize();
-        force = s_MaxForce * force;
+        force = s_MaxForce * force * weight;
     }
     AddForce(force);
 }
 
-void Boid::Seek(const Point& target, float speed)
+void Boid::Seek(const Point& target, float speed, float weight)
 {
     Vector offset = target - m_Position;
     Vector direction = Vector::Normalize(offset);
@@ -192,7 +237,7 @@ void Boid::Seek(const Point& target, float speed)
     if(distance < s_ArrivalDistance)
         desired = (distance / s_ArrivalDistance) * desired;
     
-    Steer(desired);
+    Steer(desired, weight);
 }
 
 void Boid::Separate(void)
@@ -208,8 +253,8 @@ void Boid::Separate(void)
 
         if(distance <= s_SeparateDistance) {
             Vector desired = Vector::Normalize(offset);
-            desired = Clamp(s_SeparateDistance / distance, 0.0f, s_MaxSpeed) * s_SeparateWeight * desired;
-            Steer(desired);
+            desired = Clamp(s_SeparateDistance / distance, 0.0f, s_MaxSpeed) * desired;
+            Steer(desired, s_SeparateWeight);
         }
     }
 }
@@ -230,10 +275,12 @@ void Boid::Align(void)
             averageForward = averageForward + boids[i].m_Forward;
     }
 
-    // TODO
     averageForward.Normalize();
-    averageForward = s_MaxSpeed * s_AlignWeight * averageForward;
-    Steer(averageForward);
+    averageForward = s_MaxSpeed * averageForward;
+    Steer(averageForward, s_AlignWeight);
+
+    // align alpha
+    Steer(Simulation::GetInstance()->GetAlphaBoid()->m_Forward * s_MaxSpeed, s_AlphaAlignWeight);
 }
 
 void Boid::Cohere(void)
@@ -258,7 +305,10 @@ void Boid::Cohere(void)
     if(count > 1)
         averagePosition = (1.0f / count) * averagePosition;
 
-    Seek(averagePosition, s_MaxSpeed * s_CohereWeight);
+    Seek(Point(averagePosition.x, averagePosition.y, averagePosition.z), s_MaxSpeed, s_CohereWeight);
+
+    // cohere alpha
+    Seek(Simulation::GetInstance()->GetAlphaBoid()->m_Position, s_MaxSpeed, s_AlphaCohereWeight);
 }
 
 void Boid::Mirror(void)
@@ -275,6 +325,47 @@ void Boid::Mirror(void)
     else if(m_Position.z < -radius) mirrored.z =  2.0f * radius + m_Position.z;
     
     m_Position = mirrored;
+}
+
+#pragma endregion
+
+#pragma region alpha_boid
+
+#define ALPHA_BOID_TURN_SPEED 3.0f;
+
+AlphaBoid::AlphaBoid(void) {}
+
+AlphaBoid::~AlphaBoid() {}
+
+void AlphaBoid::OnUpdate(void)
+{
+    // update pitch and yaw
+    if(Input::GetInstance()->GetKey(KEY_UP))
+        m_Pitch += ALPHA_BOID_TURN_SPEED;
+    if(Input::GetInstance()->GetKey(KEY_DOWN))
+        m_Pitch -= ALPHA_BOID_TURN_SPEED;
+    if(Input::GetInstance()->GetKey(KEY_LEFT))
+        m_Yaw += ALPHA_BOID_TURN_SPEED;
+    if(Input::GetInstance()->GetKey(KEY_RIGHT))
+        m_Yaw -= ALPHA_BOID_TURN_SPEED;
+    m_Pitch = Clamp(m_Pitch, -89.0f, 89.0f);
+
+    m_Forward = Matrix4::RotateY(m_Yaw) * Matrix4::RotateX(m_Pitch) * Vector(0.0f, 0.0f, -1.0f);
+    m_Velocity = m_Speed * m_Forward;
+
+    OnPhysicsUpdate();
+    
+    Mirror();
+}
+
+float AlphaBoid::GetPitch(void) const
+{
+    return m_Pitch;
+}
+
+float AlphaBoid::GetYaw(void) const
+{
+    return m_Yaw;
 }
 
 #pragma endregion
@@ -302,6 +393,9 @@ Simulation::~Simulation() {}
 void Simulation::OnInit(void)
 {
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 
     // init shaders
     m_PhongShader.SetFlags(ShaderFlag::Model | ShaderFlag::NormalMatrix);
@@ -337,6 +431,12 @@ void Simulation::OnInit(void)
         { 1.0f, 1.0f, 1.0f },
         50
     });
+    m_AlphaBoidMaterial = Material({
+        { 1.0f, 1.0f, 1.0f },
+        { 1.0f, 1.0f, 1.0f },
+        { 1.0f, 1.0f, 1.0f },
+        50
+    });
     for(int i = 0; i < BOID_COUNT; i++) {
         m_Boids[i].SetMaterial(&m_BoidMaterial);
         m_Boids[i].SetPosition(Vector(
@@ -345,6 +445,7 @@ void Simulation::OnInit(void)
             Random(-BOUND_SIZE / 2.0f, BOUND_SIZE / 2.0f)));
         m_Boids[i].SetVelocity(Boid::GetMaxSpeed() * RandomUnitSphere());
     }
+    m_AlphaBoid.SetMaterial(&m_AlphaBoidMaterial);
 
     // init bound data
     std::vector<int> layout = { 3 };
@@ -365,11 +466,12 @@ void Simulation::OnInit(void)
 
 void Simulation::OnUpdate(void)
 {
-    // update camera
-    m_Camera.OnUpdate();
-    
     for(int i = 0; i < BOID_COUNT; i++)
         m_Boids[i].OnUpdate();
+    m_AlphaBoid.OnUpdate();
+    
+    // update camera
+    m_Camera.OnUpdate();
 }
 
 void Simulation::OnRender(void)
@@ -377,7 +479,8 @@ void Simulation::OnRender(void)
     // draw boids
     for(int i = 0; i < BOID_COUNT; i++)
         m_Boids[i].OnDraw();
-    
+    m_AlphaBoid.OnDraw();
+
     // draw bounds
     m_Renderer.DrawMesh(m_BoundMesh, Matrix4::Scale(BOUND_SIZE, BOUND_SIZE, BOUND_SIZE));
     
@@ -410,16 +513,35 @@ void Simulation::OnGUIRender(void)
     
     if(ImGui::CollapsingHeader("Weights", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::SliderFloat("Separate Weight",   &Boid::s_SeparateWeight, 0.0f, 2.0f);
-        ImGui::SliderFloat("Align Weight",   &Boid::s_AlignWeight, 0.0f, 2.0f);
-        ImGui::SliderFloat("Cohere Weight",   &Boid::s_CohereWeight, 0.0f, 2.0f);
+        ImGui::SliderFloat("Align Weight",      &Boid::s_AlignWeight, 0.0f, 2.0f);
+        ImGui::SliderFloat("Cohere Weight",     &Boid::s_CohereWeight, 0.0f, 2.0f);
+        ImGui::SliderFloat("Alpha Align Weight", &Boid::s_AlphaAlignWeight, 0.0f, 2.0f);
+        ImGui::SliderFloat("Alpha Cohere Weight", &Boid::s_AlphaCohereWeight, 0.0f, 2.0f);
+    }
+
+    if(ImGui::Checkbox("Track Alpha", &m_TrackingAlpha)) {
+        if(m_TrackingAlpha)
+            m_Camera.SetMode(FlyerMode::AlphaTrack);
+        else
+            m_Camera.SetMode(FlyerMode::Ghost);
     }
 
     ImGui::End();
 }
 
+void Simulation::OnResize(int width, int height)
+{
+    m_Camera.OnResize(width, height);
+}
+
 Boid *Simulation::GetBoids(void)
 {
     return m_Boids;
+}
+
+AlphaBoid *Simulation::GetAlphaBoid(void)
+{
+    return &m_AlphaBoid;
 }
 
 #pragma endregion
