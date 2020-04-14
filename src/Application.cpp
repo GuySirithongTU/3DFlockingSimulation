@@ -53,6 +53,12 @@ Window::Window(int width, int height, const char *title)
     glViewport(0, 0, m_Width, m_Height);
     glfwSetWindowSizeCallback(m_Window, ResizeCallback);
 
+    // init imgui
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui::StyleColorsDark();
+
     // print info
     std::cout << "WINDOW: successfully initialized window and OpenGL context" << std::endl;
     std::cout << "  GPU: (" << glGetString(GL_VENDOR) << ") " << glGetString(GL_RENDERER) << std::endl;
@@ -68,6 +74,9 @@ void Window::ResizeCallback(GLFWwindow *window, int width, int height)
 
 Window::~Window()
 {
+    // shut down imgui
+    ImGui_ImplGlfw_Shutdown();
+
     // terminate glfw
     glfwTerminate();
 }
@@ -119,10 +128,31 @@ Application::~Application()
 
 void Application::Run(void)
 {
+    // imgui variables 
+    bool show_demo_window = true;
+    bool show_another_window = false;
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
     OnInit();
     while(!m_Window->WindowShouldClose()) {
         m_Input.PollEvents();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        
+        // update
         OnUpdate();
+
+        // render
+        m_Renderer.BeginScene();
+        m_Renderer.Clear({ 1.0f, 0.0f, 1.0f, 1.0f });
+        OnRender();
+        OnGUIRender();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        
         m_Window->SwapBuffers();
     }
 }
@@ -134,5 +164,7 @@ Window *Application::GetWindow(void)
 
 void Application::OnInit(void) {}
 void Application::OnUpdate(void) {}
+void Application::OnRender(void) {}
+void Application::OnGUIRender(void) {}
 
 #pragma endregion

@@ -7,6 +7,7 @@
 #include <numeric>
 
 #include <glad/glad.h>
+#include <stb_image.h>
 
 #pragma region primitive
 
@@ -162,6 +163,66 @@ Shader *Mesh::GetShader(void) const
 int Mesh::GetVertexCount(void) const
 {
     return m_VertexBuffer.GetCount();
+}
+
+#pragma endregion
+
+#pragma region cube_map
+
+CubeMap::CubeMap(void) {}
+
+CubeMap::~CubeMap()
+{
+    if(m_Initialized)
+        glDeleteTextures(1, &m_Id);
+}
+
+void CubeMap::Bind(void) const
+{
+    Bind(0);
+}
+
+void CubeMap::Unbind(void) const
+{
+    Unbind(0);
+}
+
+void CubeMap::Bind(unsigned int unit) const
+{
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_Id);
+}
+
+void CubeMap::Unbind(unsigned int unit) const
+{
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+}
+
+void CubeMap::Load(unsigned int unit, const char *path[])
+{
+    glGenTextures(1, &m_Id);
+    Bind(unit);
+
+    int width, height, channels;
+    unsigned char *data;
+
+    for(int i = 0; i < 6; i++) {
+        data = stbi_load(path[i], &width, &height, &channels, 0);
+        if(channels == 0) {
+            std::cout << "CUBEMAP::ERROR: failed to load texture: " << path[i];
+            return;
+        }
+
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
 #pragma endregion
@@ -322,6 +383,26 @@ bool Shader::IsEnableNormalMatrixUniform(void) const
 void Shader::SetEnableNormalMatrixUniform(bool enabled)
 {
     m_NormalMatrixEnabled = enabled;
+}
+
+bool Shader::IsEnableNoTranslateView(void) const
+{
+    return m_NoTranslateView;
+}
+
+void Shader::SetEnableNoTranslateView(bool enabled)
+{
+    m_NoTranslateView = enabled;
+}
+
+bool Shader::IsEnableNoModel(void) const
+{
+    return m_NoModel;
+}
+
+void Shader::SetEnableNoModel(bool enabled)
+{
+    m_NoModel = enabled;
 }
 
 void Shader::SetMaterial(const Material& material)

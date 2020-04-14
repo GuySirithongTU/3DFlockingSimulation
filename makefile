@@ -3,15 +3,15 @@ RM=del
 
 SRC_DIR=src
 OBJ_DIR=obj
-INC_DIR=-Idependencies/glfw-3.3.2/include -Idependencies/glad/include
-LIB_DIR=-Ldependencies/glfw-3.3.2 -Ldependencies/glad
+INC_DIR=-Idependencies/glfw-3.3.2/include -Idependencies/glad/include -Idependencies/stb_image/include -Idependencies/imgui-1.76
+LIB_DIR=-Ldependencies/glfw-3.3.2 -Ldependencies/glad -Ldependencies/stb_image -Ldependencies/imgui-1.76
 
 CFLAGS=-c -std=c++11
 CDEF=-D _CRT_SECURE_NO_WARNINGS -D _GLFW_WIN32 -D GLFW_INCLUDE_NONE
 CPPFLAGS=$(INC_DIR) -l.
 LDFLAGS=$(LIB_DIR)
-LDLIBS=-lglfw3 -lopengl32 -lgdi32 -lglad
-MODS=dependencies/glfw-3.3.2 dependencies/glad
+LDLIBS=-lglfw3 -lopengl32 -lgdi32 -lglad -lstb_image -limgui
+MODS=dependencies/glfw-3.3.2 dependencies/glad dependencies/stb_image dependencies/imgui-1.76
 
 SRC=$(wildcard $(SRC_DIR)/*.cpp)
 OBJ=$(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)

@@ -100,17 +100,27 @@ public:
     Boid *GetBoids(void);
 
 protected:
-    virtual void OnInit() override;
-    virtual void OnUpdate() override;
-
+    virtual void OnInit(void) override;
+    virtual void OnUpdate(void) override;
+    virtual void OnRender(void) override;
+    virtual void OnGUIRender(void) override;
+    
 private:
+    // shaders
     Shader m_PhongShader;
     Shader m_UnlitShader;
-    Material m_BoidMaterial;
+    Shader m_SkyboxShader;
+
     FlyerCamera m_Camera;
 
+    // boids
+    Material m_BoidMaterial;
     Boid m_Boids[BOID_COUNT];
+    
+    // bound and skybox
     Mesh m_BoundMesh;
+    Mesh m_SkyboxMesh;
+    CubeMap m_Skybox;
 };
 
 #pragma endregion

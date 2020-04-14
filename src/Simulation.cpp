@@ -308,8 +308,14 @@ void Simulation::OnInit(void)
     m_PhongShader.InitShader("assets/shaders/Phong_V.glsl", "assets/shaders/Phong_F.glsl");
     m_PhongShader.SetEnableNormalMatrixUniform(true);
     m_UnlitShader.InitShader("assets/shaders/Unlit_V.glsl", "assets/shaders/Unlit_F.glsl");
+    m_SkyboxShader.InitShader("assets/shaders/Skybox_V.glsl", "assets/shaders/Skybox_F.glsl");
+    m_SkyboxShader.SetEnableNoTranslateView(true);
+    m_SkyboxShader.SetEnableNoModel(true);
+    m_SkyboxShader.Bind();
+    m_SkyboxShader.SetUniformInt("u_Skybox", 0);
     m_Renderer.AddShader(&m_PhongShader);
     m_Renderer.AddShader(&m_UnlitShader);
+    m_Renderer.AddShader(&m_SkyboxShader);
     
     // init camera
     m_Camera.SetPosition({ 0.0f, 0.0f, 60.0f });
@@ -319,16 +325,16 @@ void Simulation::OnInit(void)
     m_PhongShader.Bind();
     m_PhongShader.SetDirLight({
         { 0.05f, 0.05f, 0.15f },
-        { 0.7f, 0.7f, 0.7f },
-        { 0.8f, 0.8f, 0.8f },
-        { -1.0f, -3.0f, -1.0f }
+        { 0.9f, 0.9f, 0.9f },
+        { 1.0f, 1.0f, 1.0f },
+        { 1.0f, -2.0f, 2.0f }
     });
     
     // init boid data
     Boid::InitMesh(&m_PhongShader);
     m_BoidMaterial = Material({
-        { 0.2f, 0.6f, 0.7f },
-        { 0.2f, 0.6f, 0.7f },
+        { 0.9f, 0.3f, 0.1f },
+        { 0.9f, 0.3f, 0.1f },
         { 1.0f, 1.0f, 1.0f },
         50
     });
@@ -346,21 +352,53 @@ void Simulation::OnInit(void)
     m_BoundMesh.InitData("assets/models/Bound.mesh", layout, GL_LINES, &m_UnlitShader);
     m_UnlitShader.Bind();
     m_UnlitShader.SetUniformVec3("u_Color", Vector(1.0f, 1.0f, 1.0f));
+
+    // init skybox
+    const char *skyboxPaths[] = {
+        "assets/textures/skybox_right.jpg",     "assets/textures/skybox_left.jpg",
+        "assets/textures/skybox_top.jpg",       "assets/textures/skybox_bottom.jpg",
+        "assets/textures/skybox_front.jpg",     "assets/textures/skybox_back.jpg",
+    };
+
+    m_SkyboxMesh.InitData("assets/models/Skybox.mesh", layout, GL_TRIANGLES, &m_SkyboxShader);
+    m_Skybox.Load(0, skyboxPaths);
 }
 
 void Simulation::OnUpdate(void)
 {
+    // update camera
     m_Camera.OnUpdate();
-    m_Renderer.BeginScene();
-    m_Renderer.Clear({ 1.0f, 0.0f, 1.0f, 1.0f });
     
     for(int i = 0; i < BOID_COUNT; i++)
         m_Boids[i].OnUpdate();
-    
+}
+
+void Simulation::OnRender(void)
+{
+    // draw boids
     for(int i = 0; i < BOID_COUNT; i++)
         m_Boids[i].OnDraw();
     
+    // draw bounds
     m_Renderer.DrawMesh(m_BoundMesh, Matrix4::Scale(BOUND_SIZE, BOUND_SIZE, BOUND_SIZE));
+    
+    // draw skybox
+    glDepthFunc(GL_LEQUAL);
+    m_Skybox.Bind(0);
+    m_Renderer.DrawMesh(m_SkyboxMesh, Matrix4::Identity());
+    glDepthFunc(GL_LESS);
+}
+
+void Simulation::OnGUIRender(void)
+{
+    ImGui::Begin("System");
+    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+    
+    ImGui::Begin("test window");
+    static float f = 1.0f;
+    ImGui::SliderFloat("test", &f, 0.0f, 2.0f);
+    ImGui::End();
 }
 
 Boid *Simulation::GetBoids(void)

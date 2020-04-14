@@ -10,6 +10,7 @@ public:
     ~Camera();
 
     Matrix4 GetView(void) const;
+    Matrix4 GetNoTranslateView(void) const;
     Matrix4 GetProjection(void) const;
     void SetView(const Matrix4& view);
     void SetProjection(const Matrix4& projection);

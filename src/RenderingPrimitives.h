@@ -89,6 +89,24 @@ private:
 
 #pragma endregion
 
+#pragma region
+
+class CubeMap : public Primitive
+{
+public:
+    CubeMap(void);
+    ~CubeMap();
+
+    void Bind(void) const override;
+    void Unbind(void) const override;
+    void Bind(unsigned int unit) const;
+    void Unbind(unsigned int unit) const;
+
+    void Load(unsigned int unit, const char *paths[]);
+};
+
+#pragma endregion
+
 #pragma region shader
 
 struct Material
@@ -130,6 +148,10 @@ public:
 
     bool IsEnableNormalMatrixUniform(void) const;
     void SetEnableNormalMatrixUniform(bool enabled);
+    bool IsEnableNoTranslateView(void) const;
+    void SetEnableNoTranslateView(bool enabled);
+    bool IsEnableNoModel(void) const;
+    void SetEnableNoModel(bool enabled);
     void SetMaterial(const Material& material);
     void SetDirLight(const DirLight& light);
 
@@ -137,6 +159,8 @@ private:
     unsigned int CompileShader(const char *path, unsigned int type);
     Material m_CurrentMaterial = { Color(), Color(), Color(), 0 };
     bool m_NormalMatrixEnabled = false;
+    bool m_NoTranslateView = false;
+    bool m_NoModel = false;
 };
 
 #pragma endregion

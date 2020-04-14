@@ -1,6 +1,9 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 #include "Renderer.h"
 #include "Input.h"
@@ -46,6 +49,8 @@ public:
 protected:
     virtual void OnInit(void);
     virtual void OnUpdate(void);
+    virtual void OnRender(void);
+    virtual void OnGUIRender(void);
 
 protected:
     Window *m_Window;
