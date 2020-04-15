@@ -79,6 +79,7 @@ public:
     unsigned int GetMode(void) const;
     Shader *GetShader(void) const;
     int GetVertexCount(void) const;
+    void SetShader(Shader *shader);
 
 private:
     VertexBuffer m_VertexBuffer;

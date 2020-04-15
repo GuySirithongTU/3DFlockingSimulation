@@ -146,9 +146,18 @@ void Boid::OnUpdate(void)
     Mirror();
 }
 
-void Boid::OnDraw(void) const
+void Boid::OnDraw(void)
 {
-    // compute model
+    // set material
+    s_Mesh.GetShader()->Bind();
+    s_Mesh.GetShader()->SetMaterial(*m_Material);
+    
+    // draw mesh
+    Renderer::GetInstance()->DrawMesh(s_Mesh, ComputeModel());
+}
+
+Matrix4 Boid::ComputeModel(void) const
+{
     float pitch, yaw;
     Vector forward = m_Forward;
     pitch = RAD_TO_DEG(-asin(Tuple::Dot(forward, Vector(0.0f, -1.0f, 0.0f))));
@@ -159,13 +168,7 @@ void Boid::OnDraw(void) const
         yaw = 360.0f - yaw;
     Matrix4 model = Matrix4::Translate(m_Position.x, m_Position.y, m_Position.z) *
                     Matrix4::RotateY(yaw) * Matrix4::RotateX(pitch);
-
-    // set material
-    s_Mesh.GetShader()->Bind();
-    s_Mesh.GetShader()->SetMaterial(*m_Material);
-    
-    // draw mesh
-    Renderer::GetInstance()->DrawMesh(s_Mesh, model);
+    return model;
 }
 
 Point Boid::GetPosition(void) const
@@ -358,6 +361,42 @@ void AlphaBoid::OnUpdate(void)
     Mirror();
 }
 
+void AlphaBoid::OnDraw(void)
+{
+    if(!m_IsHighlighted) {
+        Boid::OnDraw();
+        return;
+    }
+
+    // setup stencil to draw one
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+    
+    // set material
+    s_Mesh.GetShader()->Bind();
+    s_Mesh.GetShader()->SetMaterial(*m_Material);
+    
+    // draw mesh
+    Matrix4 model = ComputeModel();
+    Renderer::GetInstance()->DrawMesh(s_Mesh, model);
+
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+    
+    Shader *phongShader = s_Mesh.GetShader();
+    Shader *highlightShader = Simulation::GetInstance()->GetHighlightShader();
+    
+    highlightShader->Bind();
+    highlightShader->SetUniformVec3("u_Color", { m_HighlightColor.r, m_HighlightColor.g, m_HighlightColor.b });
+    s_Mesh.SetShader(highlightShader);
+    Renderer::GetInstance()->DrawMesh(s_Mesh, model * Matrix4::Scale(1.3f, 1.3f, 1.3f));
+    s_Mesh.SetShader(phongShader);
+
+    glDisable(GL_STENCIL_TEST);
+}
+
 float AlphaBoid::GetPitch(void) const
 {
     return m_Pitch;
@@ -406,9 +445,12 @@ void Simulation::OnInit(void)
     m_SkyboxShader.InitShader("assets/shaders/Skybox_V.glsl", "assets/shaders/Skybox_F.glsl");
     m_SkyboxShader.Bind();
     m_SkyboxShader.SetUniformInt("u_Skybox", 0);
+    m_HighlightShader.InitShader("assets/shaders/Highlight_V.glsl", "assets/shaders/Highlight_F.glsl");
+    m_HighlightShader.SetFlags(ShaderFlag::Model);
     m_Renderer.AddShader(&m_PhongShader);
     m_Renderer.AddShader(&m_UnlitShader);
     m_Renderer.AddShader(&m_SkyboxShader);
+    m_Renderer.AddShader(&m_HighlightShader);
     
     // init camera
     m_Camera.SetPosition({ 0.0f, 0.0f, 60.0f });
@@ -477,11 +519,13 @@ void Simulation::OnUpdate(void)
 void Simulation::OnRender(void)
 {
     // draw boids
+    m_AlphaBoid.OnDraw();
     for(int i = 0; i < BOID_COUNT; i++)
         m_Boids[i].OnDraw();
-    m_AlphaBoid.OnDraw();
 
     // draw bounds
+    m_UnlitShader.Bind();
+    m_UnlitShader.SetUniformVec3("u_Color", Vector(1.0f, 1.0f, 1.0f));
     m_Renderer.DrawMesh(m_BoundMesh, Matrix4::Scale(BOUND_SIZE, BOUND_SIZE, BOUND_SIZE));
     
     // draw skybox
@@ -498,6 +542,14 @@ void Simulation::OnGUIRender(void)
     ImGui::End();
     
     ImGui::Begin("Flocking");
+
+    if(ImGui::Checkbox("Track Alpha", &m_TrackingAlpha)) {
+        if(m_TrackingAlpha)
+            m_Camera.SetMode(FlyerMode::AlphaTrack);
+        else
+            m_Camera.SetMode(FlyerMode::Ghost);
+    }
+    ImGui::Checkbox("Alpha Highlight", &m_AlphaBoid.m_IsHighlighted);
 
     if(ImGui::CollapsingHeader("Limits", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::SliderFloat("Max Speed", &Boid::s_MaxSpeed, 0.1f, 2.0f);
@@ -519,11 +571,12 @@ void Simulation::OnGUIRender(void)
         ImGui::SliderFloat("Alpha Cohere Weight", &Boid::s_AlphaCohereWeight, 0.0f, 2.0f);
     }
 
-    if(ImGui::Checkbox("Track Alpha", &m_TrackingAlpha)) {
-        if(m_TrackingAlpha)
-            m_Camera.SetMode(FlyerMode::AlphaTrack);
-        else
-            m_Camera.SetMode(FlyerMode::Ghost);
+    if(ImGui::CollapsingHeader("Colors")) {
+        if(ImGui::ColorEdit3("Boid Color", &m_BoidMaterial.diffuse.r))
+            m_BoidMaterial.ambient = m_BoidMaterial.diffuse;
+        if(ImGui::ColorEdit3("Alpha Boid Color", &m_AlphaBoidMaterial.diffuse.r))
+            m_AlphaBoidMaterial.ambient = m_AlphaBoidMaterial.diffuse;
+        ImGui::ColorEdit3("Alpha Highlight Color", &m_AlphaBoid.m_HighlightColor.r);
     }
 
     ImGui::End();
@@ -542,6 +595,11 @@ Boid *Simulation::GetBoids(void)
 AlphaBoid *Simulation::GetAlphaBoid(void)
 {
     return &m_AlphaBoid;
+}
+
+Shader *Simulation::GetHighlightShader(void)
+{
+    return &m_HighlightShader;
 }
 
 #pragma endregion

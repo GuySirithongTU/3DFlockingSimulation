@@ -66,7 +66,9 @@ void Renderer::DrawMesh(const Mesh& mesh, const Matrix4& model)
 void Renderer::Clear(const Color& color)
 {
     glClearColor(color.r, color.g, color.b, color.a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glStencilMask(0xFF);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glStencilMask(0x00);
 }
 
 void Renderer::AddShader(Shader *shader)

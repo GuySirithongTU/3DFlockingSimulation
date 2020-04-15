@@ -59,7 +59,7 @@ public:
 
     static void InitMesh(Shader *shader); 
     virtual void OnUpdate(void);
-    void OnDraw(void) const;
+    virtual void OnDraw(void);
 
     Point GetPosition(void) const;
     void SetPosition(const Point& position);
@@ -76,6 +76,8 @@ protected:
     void Align(void);
     void Cohere(void);
     void Mirror(void);
+
+    Matrix4 ComputeModel(void) const;
 
 protected:
     Point m_Position;
@@ -106,6 +108,7 @@ public:
     ~AlphaBoid();
 
     virtual void OnUpdate(void) override;
+    virtual void OnDraw(void) override;
 
     float GetPitch(void) const;
     float GetYaw(void) const;
@@ -114,6 +117,12 @@ private:
     float m_Pitch = 0.0f;
     float m_Yaw = 0.0f;
     float m_Speed = 0.4f;
+
+    Color m_HighlightColor = Color(1.0f, 0.0f, 0.0f);
+    bool m_IsHighlighted = true;
+
+private:
+    friend class Simulation;
 };
 
 #pragma endregion
@@ -132,6 +141,7 @@ public:
 
     Boid *GetBoids(void);
     AlphaBoid *GetAlphaBoid(void);
+    Shader *GetHighlightShader(void);
 
 protected:
     virtual void OnInit(void) override;
@@ -145,6 +155,7 @@ private:
     Shader m_PhongShader;
     Shader m_UnlitShader;
     Shader m_SkyboxShader;
+    Shader m_HighlightShader;
 
     FlyerCamera m_Camera;
 

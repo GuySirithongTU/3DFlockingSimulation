@@ -165,6 +165,11 @@ int Mesh::GetVertexCount(void) const
     return m_VertexBuffer.GetCount();
 }
 
+void Mesh::SetShader(Shader *shader)
+{
+    m_Shader = shader;
+}
+
 #pragma endregion
 
 #pragma region cube_map
